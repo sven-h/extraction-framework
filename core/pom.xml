@@ -37,12 +37,12 @@
 
                 <configuration>
                     <launchers>
-                    
+
                         <launcher>
                             <id>download-ontology</id>
                             <mainClass>org.dbpedia.extraction.util.OntologyDownloader</mainClass>
                             <args>
-                                <arg>../ontology.xml</arg> 
+                                <arg>../ontology.xml</arg>
                                 <arg>../ontology.owl</arg>
                                 <arg>${project.version}</arg>
                             </args>
@@ -52,7 +52,7 @@
                             <id>download-mappings</id>
                             <mainClass>org.dbpedia.extraction.util.MappingsDownloader</mainClass>
                             <args>
-                                <arg>../mappings</arg> 
+                                <arg>../mappings</arg>
                             </args>
                         </launcher>
 
@@ -91,10 +91,10 @@
         </dependency>
 
         <dependency>
-          <groupId>junit</groupId>
-          <artifactId>junit</artifactId>
-          <version>4.8.2</version>
-          <scope>test</scope>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.8.2</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -102,6 +102,7 @@
             <artifactId>swc-engine</artifactId>
             <version>2.1.0</version>
         </dependency>
+
         <dependency>
             <groupId>org.sweble.wom3</groupId>
             <artifactId>sweble-wom3</artifactId>
@@ -109,19 +110,17 @@
             <type>pom</type>
         </dependency>
 
-
+        <dependency>
+            <groupId>org.wikidata.wdtk</groupId>
+            <artifactId>wdtk-dumpfiles</artifactId>
+            <version>0.7.0</version>
+        </dependency>
 
         <dependency>
-		<groupId>org.wikidata.wdtk</groupId>
-		<artifactId>wdtk-dumpfiles</artifactId>
-		<version>0.7.0</version>
-	 </dependency>	
-	 
-	 <dependency>
-              <groupId>org.wikidata.wdtk</groupId>
-              <artifactId>wdtk-datamodel</artifactId>
-              <version>0.7.0</version>
-         </dependency>
+            <groupId>org.wikidata.wdtk</groupId>
+            <artifactId>wdtk-datamodel</artifactId>
+            <version>0.7.0</version>
+        </dependency>
 
         <dependency>
             <groupId>org.scala-lang</groupId>
@@ -139,7 +138,7 @@
             <version>2.5.0</version>
         </dependency>
 
-		<dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-scala_2.11</artifactId>
             <version>2.5.0</version>
@@ -152,17 +151,13 @@
             <version>3.1.0</version>
         </dependency>
 
-        <!-- This is temporary installed in local repo -->
+        <!-- This is temporary installed in local repo, see https://github.com/RMLio/RML-Mapper/issues/16 -->
         <dependency>
             <groupId>be.ugent.mmlab.rml</groupId>
             <artifactId>RML-Mapper</artifactId>
             <version>1.1</version>
         </dependency>
 
-
     </dependencies>
 
-
-
 </project>
-

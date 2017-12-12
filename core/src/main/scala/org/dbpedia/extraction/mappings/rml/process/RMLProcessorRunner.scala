@@ -15,7 +15,7 @@ import org.dbpedia.extraction.ontology.Ontology
 import org.dbpedia.extraction.ontology.datatypes.Datatype
 import org.dbpedia.extraction.util.Language
 import org.dbpedia.extraction.wikiparser.TemplateNode
-import org.eclipse.rdf4j.rio.RDFFormat
+import org.openrdf.rio.RDFFormat
 
 import scala.collection.JavaConversions
 import scala.language.reflectiveCalls
@@ -27,7 +27,8 @@ import scala.language.reflectiveCalls
   * TODO: refactor this class @wmaroy!
   * TODO: a new RML engine is under development with better library support, this class will change
   **/
-class RMLProcessorRunner(mappings: Map[String, RMLMapping]) {
+class RMLProcessorRunner(mappings: Map[String, RMLMapping])
+{
 
   def process(templateNode: TemplateNode, mappingName : String, subjectUri: String, context : { def language : Language
                                                                                                   def ontology: Ontology
@@ -36,7 +37,6 @@ class RMLProcessorRunner(mappings: Map[String, RMLMapping]) {
     /**
       *  Setting up the processor
       */
-
     val parameters = new util.HashMap[String, String]()
     val triplesMap = "http://" + context.language.isoCode +".dbpedia.org/resource/" + mappingName.replace("%3A", ":")
     val exeTriplesMap = List[String](triplesMap)
@@ -57,12 +57,11 @@ class RMLProcessorRunner(mappings: Map[String, RMLMapping]) {
     oos.close()
     val is = new ByteArrayInputStream(baos.toByteArray())
 
-
     /**
       * Running the processor
       */
-    engine.generateRDFTriples(dataset, mappings(mappingName), parameters, exeTriplesMap.toArray, is)
-
+    //engine.generateRDFTriples(dataset, mappings(mappingName), parameters, exeTriplesMap.toArray, is)
+    engine.runRMLMapping(dataset, mappings(mappingName), "http://" + context.language.isoCode +".dbpedia.org/resource/", parameters, exeTriplesMap.toArray)
 
     /**
       * Processing the output of the processor
@@ -177,4 +176,3 @@ class RMLProcessorRunner(mappings: Map[String, RMLMapping]) {
   }
 
 }
-

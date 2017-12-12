@@ -8,7 +8,7 @@ import be.ugent.mmlab.rml.mapdochandler.extraction.std.StdRMLMappingFactory
 import be.ugent.mmlab.rml.mapdochandler.retrieval.RMLDocRetrieval
 import be.ugent.mmlab.rml.model.{RMLMapping, TriplesMap}
 import org.apache.log4j.Logger
-import org.eclipse.rdf4j.rio.RDFFormat
+import org.openrdf.rio.RDFFormat
 
 /**
   * Responsible for parsing RML documents using the MapDocHandler

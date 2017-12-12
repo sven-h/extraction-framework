@@ -88,7 +88,7 @@ public class HtmlCoder
   /**
    * Set the {@link Appender appender}. Before this method is called,
    * a {@link DefaultAppender} is used.
-   * @param handler the {@link Appender appender}, must not be {@code null}
+   * @param appender the {@link Appender appender}, must not be {@code null}
    */
   public void setAppender( Appender appender )
   {
@@ -330,7 +330,7 @@ public class HtmlCoder
       String contentType = conn.getContentType();
       if (! contentType.startsWith(CONTENT_TYPE)) throw new IOException("don't like content-type ["+contentType+"]");
       Charset charset = Charset.forName(contentType.substring(CONTENT_TYPE.length()));
-      
+
       InputStream in = conn.getInputStream();
       try
       {
@@ -341,21 +341,21 @@ public class HtmlCoder
           if (line.startsWith("&lt;!ENTITY"))
           {
             String[] parts = line.split("\\s+", -1);
-            
+
             if (parts.length < 4) throw error("expected at least [4] whitespace-separated parts, found ["+parts.length+"]", line);
-            
+
             if (! parts[0].equals("&lt;!ENTITY")) throw error("first part should be '&lt;!ENTITY', but is '"+parts[0]+"'", line);
-            
+
             Matcher matcher = NAME_PATTERN.matcher(parts[1]);
             if (! matcher.matches()) throw error("second part should match regex '"+NAME_PATTERN+"', but is '"+parts[1]+"'", line);
             String name = parts[1];
-            
+
             if (! parts[2].equals("CDATA")) throw error("third part should be 'CDATA', but is '"+parts[2]+"'", line);
-            
+
             matcher = VALUE_PATTERN.matcher(parts[3]);
             if (! matcher.matches()) throw error("fourth part should match regex '"+VALUE_PATTERN+"', but is '"+parts[3]+"'", line);
             Integer value = Integer.valueOf(matcher.group(1));
-            
+
             entities.put(name, value);
           }
           else if (line.contains("ENTITY"))

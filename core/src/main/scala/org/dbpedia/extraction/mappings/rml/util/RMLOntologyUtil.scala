@@ -3,7 +3,7 @@ package org.dbpedia.extraction.mappings.rml.util
 import be.ugent.mmlab.rml.model.{PredicateObjectMap, TriplesMap}
 import org.dbpedia.extraction.ontology.datatypes.Datatype
 import org.dbpedia.extraction.ontology.{Ontology, OntologyClass, OntologyProperty, RdfNamespace}
-import org.eclipse.rdf4j.model.IRI
+import org.openrdf.model.URI
 
 import scala.language.reflectiveCalls
 
@@ -105,8 +105,8 @@ object RMLOntologyUtil {
   }
 
   private def loadTriplesMapOntologyClassName(triplesMap: TriplesMap): String = {
-    val namespace = triplesMap.getSubjectMap.getClassIRIs.toArray.head.asInstanceOf[IRI].getNamespace
-    val localName = triplesMap.getSubjectMap.getClassIRIs.toArray.head.asInstanceOf[IRI].getLocalName
+    val namespace = triplesMap.getSubjectMap.getClassIRIs.toArray.head.asInstanceOf[URI].getNamespace
+    val localName = triplesMap.getSubjectMap.getClassIRIs.toArray.head.asInstanceOf[URI].getLocalName
     if(namespace != "http://dbpedia.org/ontology/") {
       val prefix = getPrefix(namespace)
       prefix + ":" + localName
