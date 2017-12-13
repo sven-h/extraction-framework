@@ -14,8 +14,8 @@ RUN git checkout rml
 RUN git submodule update --init --recursive
 
 ## install RML-Mapper
-RUN mkdir -p /root/.m2/repository/be/ugent/mmlab/rml/RML-Mapper/1.1/
-RUN cp dependencies/RML-Mapper.jar /root/.m2/repository/be/ugent/mmlab/rml/RML-Mapper/1.1/RML-Mapper-1.1.jar ####
+RUN mkdir -p ~/.m2/repository/be/ugent/mmlab/rml/RML-Mapper/1.1/
+RUN cp dependencies/RML-Mapper.jar ~/.m2/repository/be/ugent/mmlab/rml/RML-Mapper/1.1/RML-Mapper-1.1.jar ####
 
 ## build the server
 RUN mvn clean install -fn ##

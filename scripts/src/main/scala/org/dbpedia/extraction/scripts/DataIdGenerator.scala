@@ -1,19 +1,19 @@
 package org.dbpedia.extraction.scripts
 
 import java.io._
-import java.net.{URLEncoder, URI}
+import java.net.{URI, URLEncoder}
 import java.nio.charset.Charset
 import java.security.InvalidParameterException
-import java.text.SimpleDateFormat
+import java.text.{ParseException, SimpleDateFormat}
 import java.util.Date
 import java.util.logging.{Level, Logger}
 
 import com.hp.hpl.jena.rdf.model._
 import com.hp.hpl.jena.vocabulary.RDF
 import org.apache.commons.lang3.SystemUtils
-import org.apache.jena.atlas.json.{JsonValue, JSON, JsonObject}
+import org.apache.jena.atlas.json.{JSON, JsonObject, JsonValue}
 import org.dbpedia.extraction.destinations.{DBpediaDatasets, Dataset}
-import org.dbpedia.extraction.util.{OpenRdfUtils, Language}
+import org.dbpedia.extraction.util.{Language, OpenRdfUtils}
 import org.openrdf.rio.RDFFormat
 
 import scala.Console._
@@ -21,7 +21,6 @@ import scala.collection.JavaConverters._
 import scala.io.Source
 import scala.reflect.runtime.currentMirror
 import scala.reflect.runtime.universe._
-
 import scala.language.postfixOps
 import sys.process._
 
@@ -700,7 +699,7 @@ object DataIdGenerator {
     rights = configMap.get("rightsStatement").getAsString.value
 
     releaseDate = Option(configMap.get("releaseDate").getAsString.value) match{
-      case Some(x) => try{ dateformat.parse(x)}
+      case Some(x) => try{dateformat.parse(x)} catch {case e : ParseException => new Date()}
       case None => new Date()
     }
 
