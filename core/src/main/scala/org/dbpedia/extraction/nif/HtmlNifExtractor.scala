@@ -425,7 +425,12 @@ abstract class HtmlNifExtractor(nifContextIri: String, language: String, nifPara
         case Success(e) => eqhs(i).replaceWith(Jsoup.parseBodyFragment(e).body().child(0))
         case Failure(f) => eqhs(i).replaceWith(Jsoup.parseBodyFragment("<span/>").body().child(0))
       }
-
+    //remove all paragraphs which do not contain any text like "<p>  </br>  </p>"
+    for (e <- doc.getElementsByTag("p").asScala) {
+      if (e.ownText().trim.isEmpty) {
+        e.remove()
+      }
+    }
 
     doc
   }

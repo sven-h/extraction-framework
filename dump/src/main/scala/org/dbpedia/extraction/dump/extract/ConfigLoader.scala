@@ -4,6 +4,7 @@ import java.io._
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Logger
+import javax.xml.stream.XMLInputFactory
 
 import org.dbpedia.extraction.config.{Config, ConfigUtils}
 import org.dbpedia.extraction.config.provenance.{DBpediaDatasets, Dataset}
@@ -20,6 +21,7 @@ import scala.collection.convert.decorateAsScala._
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.reflect._
+import scala.util.control.NonFatal
 
 /**
  * Loads the dump extraction configuration.
@@ -67,10 +69,26 @@ class ConfigLoader(config: Config)
     val finder = new Finder[File](config.dumpDir, input._1, config.wikiName)
 
     val date = latestDate(finder)
+    
+    //update languages (for inter language links):
+    val factory = XMLInputFactory.newInstance // newInstance is expensive, call it only once
+    val language = input._1
 
+    var _settings = new WikiSettings(Map(), Map(), Map(), Map())
+    try {
+      finder.file(date, "wiki-settings.obj") match {
+        case Some(cache) => new LazyWikiCaller(new URL(language.apiUri + "?" + WikiSettingsReader.query), true, cache, false).execute { stream =>
+          _settings = WikiSettingsReader.read(factory.createXMLEventReader(stream))
+        }
+      }
+    } catch { case NonFatal(ex) => {logger.warning("Could not load WikiSettings - error: " + ex.getMessage)} }
+    Language.updateInterwikis(_settings.interwikis)
+    
     //Extraction Context
     val context = new DumpExtractionContext
     {
+      def wikiSettings : WikiSettings = _settings
+
       def ontology: Ontology = _ontology
 
       def commonsSource: Source = _commonsSource
@@ -105,6 +123,13 @@ class ConfigLoader(config: Config)
       def mappings : Mappings = _mappings
 
       def articlesSource: Source = getArticlesSource(language, finder)
+
+      private val _templates =
+      {
+        Template.load(articlesSource)
+      }
+
+      def templates : Template = _templates
 
       private val _redirects =
       {

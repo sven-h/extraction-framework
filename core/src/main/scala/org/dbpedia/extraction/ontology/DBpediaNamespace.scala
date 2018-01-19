@@ -29,10 +29,10 @@ object DBpediaNamespace {
     new DBpediaNamespace(namespace)
   }
 
-  val ONTOLOGY = ns("http://dbpedia.org/ontology/")
-  val DATATYPE = ns("http://dbpedia.org/datatype/")
-  val DATASET = ns("http://dbpedia.org/dataset/")
-  val EXTRACTOR = ns("http://dbpedia.org/extractor/")
-  val TRANSFORM = ns("http://dbpedia.org/transform/")
+  val ONTOLOGY = ns("http://dbkwik.webdatacommons.org/ontology/")
+  val DATATYPE = ns("http://dbkwik.webdatacommons.org/datatype/")
+  val DATASET = ns("http://dbkwik.webdatacommons.org/dataset/")
+  val EXTRACTOR = ns("http://dbkwik.webdatacommons.org/extractor/")
+  val TRANSFORM = ns("http://dbkwik.webdatacommons.org/transform/")
 
 }

@@ -144,13 +144,8 @@ public class LinkExtractor implements NodeVisitor {
 	
 	private String cleanLink(String uri, boolean external) {
 		if(!external) {
-			if(!this.context.language.equals("en")) {
 
-				uri="http://"+this.context.language+".dbpedia.org/resource/"+uri.substring(uri.indexOf("?title=")+7);
-				
-			} else {
-				uri="http://dbpedia.org/resource/"+uri.substring(uri.indexOf("?title=")+7);
-			}
+			uri = this.context.resource.substring(0, this.context.resource.indexOf("/resource/") + 10) + uri.substring(uri.indexOf("?title=")+7);
 			uri = uri.replace("&action=edit&redlink=1", "");
 			
 		} else {
@@ -168,7 +163,7 @@ public class LinkExtractor implements NodeVisitor {
 			}
 		}
 
-		return UriUtils.uriToDbpediaIri(uri).toString();
+		return UriUtils.uriToIri(uri).toString();
 	}
 	
 	public void tail(Node node, int depth) {

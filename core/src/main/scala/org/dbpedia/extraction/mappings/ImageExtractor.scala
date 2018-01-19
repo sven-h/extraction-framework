@@ -38,7 +38,7 @@ extends PageNodeExtractor
   private val wikiCode = context.language.wikiCode
   private val language = context.language
 
-  require(ImageExtractorConfig.supportedLanguages.contains(wikiCode), "ImageExtractor's supported languages: "+ImageExtractorConfig.supportedLanguages.mkString(", ")+"; not "+wikiCode)
+  //require(ImageExtractorConfig.supportedLanguages.contains(wikiCode), "ImageExtractor's supported languages: "+ImageExtractorConfig.supportedLanguages.mkString(", ")+"; not "+wikiCode)
 
   private val fileNamespaceIdentifier = Namespace.File.name(language)
 

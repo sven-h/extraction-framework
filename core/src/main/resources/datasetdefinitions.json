@@ -214,6 +214,18 @@
       "traits":"LinkedData, Published",
       "desc": "French dataset about population.",
       "defaultgraph": "namespace"
+    },
+    "template_type": {
+      "name": "Template Type",
+      "traits":"LinkedData, Published",
+      "desc": "Types from Templates",
+      "defaultgraph": "namespace"
+    },
+    "template_type_definitions": {
+      "name": "Template Type Definitions",
+      "traits":"LinkedData, Published",
+      "desc": "Template Type Definitions.",
+      "defaultgraph": "namespace"
     }
   },
   "mappings_based":{

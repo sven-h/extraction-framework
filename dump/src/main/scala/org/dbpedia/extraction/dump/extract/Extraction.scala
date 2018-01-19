@@ -4,7 +4,7 @@ import java.net.Authenticator
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import org.dbpedia.extraction.config.Config
-import org.dbpedia.extraction.util.ProxyAuthenticator
+import org.dbpedia.extraction.util.{Language, ProxyAuthenticator}
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
@@ -20,11 +20,14 @@ object Extraction {
   val Complete = "extraction-complete"
 
   def main(args: Array[String]): Unit = {
-    require(args != null && args.length >= 1 && args(0).nonEmpty, "missing required argument: config file name")
+
+    require(args != null && args.length >= 2 && args(0).nonEmpty && args(1).nonEmpty, "missing required argument: config file name and/or wikibase")
     Authenticator.setDefault(new ProxyAuthenticator())
 
+    Language.updateAllLanguages(args(1))
+
     //Load extraction jobs from configuration
-    val config = new Config(args.head)
+    val config = new Config(args(0))
     val configLoader = new ConfigLoader(config)
 
     val parallelProcesses = if(config.runJobsInParallel) config.parallelProcesses else 1

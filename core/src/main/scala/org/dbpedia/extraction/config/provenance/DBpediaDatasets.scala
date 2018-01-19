@@ -168,6 +168,9 @@ object DBpediaDatasets
     val SurfaceForms: Dataset = datasets("surface_forms")
     val Sounds: Dataset = datasets("sounds")
 
+    val TemplateType: Dataset = datasets("template_type")
+    val TemplateTypeDefinitions: Dataset = datasets("template_type_definitions")
+
     /**
      * Mapping based
      */
