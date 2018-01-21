@@ -2,7 +2,7 @@ package org.dbpedia.extraction.scripts
 
 import java.io.File
 
-import org.apache.commons.lang.StringEscapeUtils
+import org.apache.commons.lang3.StringUtils
 import org.dbpedia.extraction.config.ConfigUtils.parseLanguages
 import org.dbpedia.extraction.util.RichFile.wrapFile
 import org.dbpedia.extraction.util.{DateFinder, IOUtils}
@@ -50,7 +50,7 @@ object UnmodifiedFeederCacheGenerator {
         new QuadMapper().readQuads(finder, "page-ids" + suffix, auto = true) {
           quad =>
             val pageID = quad.value.toInt
-            var pageTitle = StringEscapeUtils.escapeSql(quad.subject.split("dbpedia.org/resource/", 2)(1))
+            var pageTitle = escapeSql(quad.subject.split("dbpedia.org/resource/", 2)(1))
             if (pageTitle.contains(':')) {
               val splitPageTitle = pageTitle.split(":", 2)
               val namespace = Namespace.get(language, splitPageTitle(0).replace("_", " "))
@@ -68,5 +68,10 @@ object UnmodifiedFeederCacheGenerator {
 
 
     }
+  }
+
+  def escapeSql(str: String): String = {
+    if (str == null) return null
+    StringUtils.replace(str, "'", "''")
   }
 }

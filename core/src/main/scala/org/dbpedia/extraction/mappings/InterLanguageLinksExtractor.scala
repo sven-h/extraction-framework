@@ -14,14 +14,14 @@ import scala.language.reflectiveCalls
  */
 class InterLanguageLinksExtractor(context: { def ontology : Ontology; def language : Language }) extends PageNodeExtractor
 {
-  private val interLanguageLinksProperty = context.ontology.properties("wikiPageInterLanguageLink")
+  private val sameAsProperty = context.ontology.properties("owl:sameAs")
 
   override val datasets = Set(DBpediaDatasets.InterLanguageLinks)
   
   private val namespaces = if (context.language == Language.Commons) ExtractorUtils.commonsNamespacesContainingMetadata
     else Set(Namespace.Main, Namespace.Template, Namespace.Category)
   
-  private val quad = QuadBuilder.apply(context.language, DBpediaDatasets.InterLanguageLinks, interLanguageLinksProperty, null) _
+  private val quad = QuadBuilder.apply(context.language, DBpediaDatasets.InterLanguageLinks, sameAsProperty, null) _
 
   override def extract(page : PageNode, subjectUri : String) : Seq[Quad] =
   {
