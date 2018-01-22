@@ -78,19 +78,19 @@ class NifSwebleExtractor(
     val pageId = new PageId(pageTitle, pageNode.id)
 
     val source = StringEscapeUtils.unescapeXml(pageNode.source)
-    var html = ""
+
     try {
       val cp = engine.postprocess(pageId, source, new MyExpansionCallback(context.templates))
-      html = HtmlRenderer.print(new MyRendererCallback, config, pageTitle, cp.getPage)
+      var html = HtmlRenderer.print(new MyRendererCallback, config, pageTitle, cp.getPage)
+      html = StringEscapeUtils.unescapeXml(html)
+      //parser currently do not remove magic words:
+      html = html.replace("__NOTOC__", "")
+      return new WikipediaNifExtractor(context, pageNode).extractNif(html)(err => pageNode.addExtractionRecord(err))
     }
     catch {
       case ex: Exception => return Seq.empty
     }
-    html = StringEscapeUtils.unescapeXml(html)
-    //parser currently do not remove magic words:
-    html = html.replace("__NOTOC__", "")
-
-    new WikipediaNifExtractor(context, pageNode).extractNif(html)(err => pageNode.addExtractionRecord(err))
+    return Seq.empty
   }
 }
 
