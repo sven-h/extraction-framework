@@ -170,6 +170,9 @@ object DBpediaDatasets
 
     val TemplateType: Dataset = datasets("template_type")
     val TemplateTypeDefinitions: Dataset = datasets("template_type_definitions")
+    val InfoboxPropertyRestrictions: Dataset = datasets("infobox_property_restrictions")
+    val SdTypesLight: Dataset = datasets("sd_types_light")
+    val RelationExtraction: Dataset = datasets("relation_extraction")
 
     /**
      * Mapping based

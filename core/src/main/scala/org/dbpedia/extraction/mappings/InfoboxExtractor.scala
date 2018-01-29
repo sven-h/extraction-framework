@@ -269,14 +269,14 @@ extends PageNodeExtractor
         splitNodes.flatMap(splitNode => objectParser.parse(splitNode)) match
         {
             // TODO: explain why we check links.size == splitNodes.size
-            case links if links.size == splitNodes.size => return links
+            case links if links.size == splitNodes.size => return links.map(link => ParseResult(link.value, None, Some(null)))
             case _ => List.empty
         }
         
         splitNodes.flatMap(splitNode => linkParser.parse(splitNode)) match
         {
             // TODO: explain why we check links.size == splitNodes.size
-            case links if links.size == splitNodes.size => links.map(x => UriUtils.cleanLink(x.value)).collect{case Some(link) => ParseResult(link)}
+            case links if links.size == splitNodes.size => links.map(x => UriUtils.cleanLink(x.value)).collect{case Some(link) => ParseResult(link, None, Some(null))}
             case _ => List.empty
         }
     }

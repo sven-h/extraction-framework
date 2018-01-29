@@ -145,7 +145,7 @@ public class LinkExtractor implements NodeVisitor {
 	private String cleanLink(String uri, boolean external) {
 		if(!external) {
 
-			uri = this.context.resource.substring(0, this.context.resource.indexOf("/resource/") + 10) + uri.substring(uri.indexOf("?title=")+7);
+			uri = this.context.resource.substring(0, this.context.resource.indexOf("/resource/") + 10) + uri.substring(uri.indexOf("mediawiki/")+10);
 			uri = uri.replace("&action=edit&redlink=1", "");
 			
 		} else {

@@ -226,7 +226,26 @@
       "traits":"LinkedData, Published",
       "desc": "Template Type Definitions.",
       "defaultgraph": "namespace"
+    },
+    "infobox_property_restrictions": {
+      "name": "Infobox Property Restrictions",
+      "traits":"LinkedData, Published",
+      "desc": "Infobox Property Restrictions.",
+      "defaultgraph": "namespace"
+    },
+    "sd_types_light": {
+      "name": "SD-Types Light",
+      "traits":"LinkedData, Published",
+      "desc": "SD-Types Light.",
+      "defaultgraph": "namespace"
+    },
+    "relation_extraction": {
+      "name": "Relation extraction",
+      "traits":"LinkedData, Published",
+      "desc": "Triples extracted from abstracts.",
+      "defaultgraph": "namespace"
     }
+    
   },
   "mappings_based":{
     "instance_types": {

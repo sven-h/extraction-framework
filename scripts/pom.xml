@@ -32,6 +32,22 @@
                 <configuration>
                     <launchers>
                         <launcher>
+                            <id>CreateDomainRangeAndTypes</id>
+                            <mainClass>org.dbpedia.extraction.scripts.CreateDomainRangeAndTypes</mainClass>
+                            <jvmArgs>
+                                <jvmArg>-server</jvmArg>
+                                <jvmArg>-XX:+UseConcMarkSweepGC</jvmArg>
+                            </jvmArgs>
+                        </launcher>
+                        <launcher>
+                            <id>RelationExtraction</id>
+                            <mainClass>org.dbpedia.extraction.scripts.RelationExtraction</mainClass>
+                            <jvmArgs>
+                                <jvmArg>-server</jvmArg>
+                                <jvmArg>-XX:+UseConcMarkSweepGC</jvmArg>
+                            </jvmArgs>
+                        </launcher>
+                        <launcher>
                             <id>CreateFlickrWrapprLinks</id>
                             <mainClass>org.dbpedia.extraction.scripts.CreateFlickrWrapprLinks</mainClass>
                             <jvmArgs>
@@ -181,7 +197,7 @@
                             <mainClass>org.dbpedia.extraction.scripts.MapObjectUris</mainClass>
                             <jvmArgs>
                                 <jvmArg>-server</jvmArg>
-                                <jvmArg>-Xmx10G</jvmArg><!-- processing languages in parallel takes a lot of space -->
+                                <jvmArg>-Xmx3000M</jvmArg><!-- processing languages in parallel takes a lot of space -->
                                 <jvmArg>-XX:+HeapDumpOnOutOfMemoryError</jvmArg>
                                 <jvmArg>-XX:+UseConcMarkSweepGC</jvmArg>
                                 <jvmArg>-XX:+PrintGC</jvmArg>
@@ -440,6 +456,25 @@
             <groupId>commons-validator</groupId>
             <artifactId>commons-validator</artifactId>
             <version>1.5.1</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>nz.ac.waikato.cms.weka</groupId>
+            <artifactId>weka-stable</artifactId>
+            <version>3.8.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.semanticweb.yars</groupId>
+            <artifactId>nxparser-parsers</artifactId>
+            <version>2.3.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>1.15</version>
         </dependency>
     </dependencies>
 
