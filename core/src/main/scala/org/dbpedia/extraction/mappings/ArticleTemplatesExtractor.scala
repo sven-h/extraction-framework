@@ -5,8 +5,9 @@ import org.dbpedia.extraction.transform.Quad
 
 import collection.mutable.HashSet
 import org.dbpedia.extraction.wikiparser._
-import org.dbpedia.extraction.ontology.Ontology
+import org.dbpedia.extraction.ontology.{DBpediaNamespace, Ontology}
 import org.dbpedia.extraction.util.Language
+
 import scala.collection.mutable.ArrayBuffer
 import scala.language.reflectiveCalls
 
@@ -24,7 +25,7 @@ class ArticleTemplatesExtractor(
 
   // FIXME: this uses the http://xx.dbpedia.org/property/ namespace, but the
   // http://dbpedia.org/ontology/ namespace would probably make more sense.
-  private val usesTemplateProperty = context.language.propertyUri.append("wikiPageUsesTemplate")
+  private val usesTemplateProperty = new DBpediaNamespace("http://dbkwik.webdatacommons.org/property/").append("wikiPageUsesTemplate")//context.language.propertyUri.append("wikiPageUsesTemplate")
 
   override val datasets = Set(DBpediaDatasets.ArticleTemplates, DBpediaDatasets.ArticleTemplatesNested)
 
