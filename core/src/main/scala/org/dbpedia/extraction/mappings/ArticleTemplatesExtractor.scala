@@ -25,7 +25,7 @@ class ArticleTemplatesExtractor(
 
   // FIXME: this uses the http://xx.dbpedia.org/property/ namespace, but the
   // http://dbpedia.org/ontology/ namespace would probably make more sense.
-  private val usesTemplateProperty = new DBpediaNamespace("http://dbkwik.webdatacommons.org/property/").append("wikiPageUsesTemplate")//context.language.propertyUri.append("wikiPageUsesTemplate")
+  private val usesTemplateProperty = context.ontology.properties("wikiPageUsesTemplate")//context.language.propertyUri.append("wikiPageUsesTemplate")
 
   override val datasets = Set(DBpediaDatasets.ArticleTemplates, DBpediaDatasets.ArticleTemplatesNested)
 
