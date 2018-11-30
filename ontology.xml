@@ -27633,6 +27633,16 @@ http://vocab.getty.edu/ulan/$1}}
 | comments =
 	{{comment|en|Reserved for DBpedia. {{Reserved for DBpedia}}}}
 | rdfs:subPropertyOf =
+}}</text></revision></page><page><title>OntologyProperty:WikiPageUsesTemplate</title><ns>202</ns><id>10114</id><revision><id>37737</id><timestamp>2014-09-08T13:44:53Z</timestamp><text>'''{{Reserved for DBpedia}}'''
+
+
+{{ObjectProperty
+| rdfs:label@en = template used by wiki page
+| rdfs:domain = owl:Thing
+| rdfs:range = owl:Thing
+| comments =
+	{{comment|en|Reserved for DBpedia. {{Reserved for DBpedia}}}}
+| rdfs:subPropertyOf =
 }}</text></revision></page><page><title>OntologyProperty:WikidataSplitIri</title><ns>202</ns><id>11440</id><revision><id>49520</id><timestamp>2015-11-13T15:01:35Z</timestamp><text>{{ObjectProperty
 | labels =
 	{{label|en|Wikidata IRI slit }}
