@@ -1,7 +1,10 @@
 package org.dbpedia.extraction.util
 
-import scala.collection.{Map,Set}
-import scala.collection.mutable.{LinkedHashMap,LinkedHashSet}
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+
+import scala.collection.JavaConverters._
+import scala.collection.{Map, Set}
+import scala.collection.mutable.{LinkedHashMap, LinkedHashSet}
 import org.dbpedia.extraction.util.RichStartElement.richStartElement
 import javax.xml.stream.XMLEventReader
 
@@ -23,10 +26,13 @@ object WikiSettingsReader {
    * Order of namespaces|namespacealiases|magicwords|interwikimap is important.
    */
   val query = "action=query&format=xml&meta=siteinfo&siprop=namespaces|namespacealiases|magicwords|interwikimap&continue="
+  val queryJson = "action=query&format=json&meta=siteinfo&siprop=namespaces|namespacealiases|magicwords|interwikimap&continue="
     
   def read(xml: XMLEventReader): WikiSettings = new WikiSettingsReader(xml).read()
 
   def read(xml: XMLEventAnalyzer): WikiSettings = new WikiSettingsReader(xml).read()
+
+  def read(json: JsonNode): WikiSettings = new WikiSettingsReaderJson(json).read()
 }
 
 /**
@@ -110,6 +116,72 @@ class WikiSettingsReader(in: XMLEventAnalyzer) {
       }
       interwikis
     }
+  }
+
+}
+
+
+
+/**
+  * Reads result of the api.php query above. The input is a JsonNode.
+  */
+class WikiSettingsReaderJson(root: JsonNode) {
+
+  private var mapper = new ObjectMapper()
+
+  def read(): WikiSettings = {
+    val namespaces = readNamespaces()
+    val aliases = readNamespaceAliases()
+    val magicwords = readMagicWords()
+    val interwikis = readInterwikis()
+    new WikiSettings(namespaces, aliases, magicwords, interwikis)
+  }
+
+  private def readNamespaces() : Map[String, Int] = {
+    val namespaces = new LinkedHashMap[String, Int]
+    for(elem <- root.path("query").path("namespaces").elements().asScala){
+      val id = elem.path("id").intValue()
+      val text = elem.path("*").textValue()
+      // order is important here - canonical first, because in the reverse map
+      // in Namespaces.scala it must be overwritten by the localized value.
+      if (id != 0) namespaces(elem.path("canonical").textValue()) = id
+      namespaces(text) = id
+    }
+    namespaces
+  }
+
+  private def readNamespaceAliases() : Map[String, Int] = {
+    val namespaceAliases = new LinkedHashMap[String, Int]
+    for(elem <- root.path("query").path("namespacealiases").elements().asScala){
+      val id = elem.path("id").intValue()
+      val text = elem.path("*").textValue()
+      namespaceAliases(text) = id
+    }
+    namespaceAliases
+  }
+
+  private def readMagicWords() : Map[String, Set[String]] = {
+    val magicwords = new LinkedHashMap[String, Set[String]]
+    for(elem <- root.path("query").path("magicwords").elements().asScala){
+      val name = elem.path("name").textValue()
+      // LinkedHashSet to preserve order (although it's probably not important)
+      val aliases = new LinkedHashSet[String]
+      for(aliasElem <- elem.path("aliases").elements().asScala) {
+        aliases += aliasElem.textValue()
+      }
+      magicwords.put(name, aliases)
+    }
+    magicwords
+  }
+
+  private def readInterwikis(): Map[String, String] = {
+    val interwikis = new LinkedHashMap[String, String]
+    for(elem <- root.path("query").path("interwikimap").elements().asScala){
+      val prefix = elem.path("prefix").textValue()
+      val url = elem.path("url").textValue()
+      interwikis(prefix) = url
+    }
+    interwikis
   }
 
 }

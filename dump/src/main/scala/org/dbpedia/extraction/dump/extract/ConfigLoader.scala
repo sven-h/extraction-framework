@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Logger
 import javax.xml.stream.XMLInputFactory
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.dbpedia.extraction.config.provenance.{DBpediaDatasets, Dataset}
 import org.dbpedia.extraction.config.{Config, ConfigUtils}
 import org.dbpedia.extraction.destinations._
@@ -74,13 +75,23 @@ class ConfigLoader(config: Config)
     
     //update languages (for inter language links):
     val factory = XMLInputFactory.newInstance // newInstance is expensive, call it only once
+    val jsonMapper = new ObjectMapper()
     val language = input._1
 
     var _settings = new WikiSettings(Map(), Map(), Map(), Map())
     try {
       finder.file(date, "wiki-settings.obj") match {
-        case Some(cache) => new LazyWikiCaller(new URL(language.apiUri + "?" + WikiSettingsReader.query), true, cache, false).execute { stream =>
-          _settings = WikiSettingsReader.read(factory.createXMLEventReader(stream))
+        case Some(cache) => new LazyWikiCaller(new URL(language.apiUri + "?" + WikiSettingsReader.query), true, cache, false).execute {
+          stream => {
+            //https://stackoverflow.com/questions/5221524/idiomatic-way-to-convert-an-inputstream-to-a-string-in-scala
+            //https://stackoverflow.com/questions/1284423/read-entire-file-in-scala
+            val fileContent = scala.io.Source.fromInputStream(stream).getLines().mkString("\n")
+            if(fileContent.trim.startsWith("<")){
+              _settings = WikiSettingsReader.read(factory.createXMLEventReader(new ByteArrayInputStream(fileContent.getBytes(java.nio.charset.StandardCharsets.UTF_8))))
+            }else{
+              _settings = WikiSettingsReader.read(jsonMapper.readTree(fileContent))
+            }
+          }
         }
       }
     } catch { case NonFatal(ex) => {logger.warning("Could not load WikiSettings - error: " + ex.getMessage)} }
