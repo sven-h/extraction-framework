@@ -168,6 +168,8 @@ object DBpediaDatasets extends java.io.Serializable
     val SurfaceForms: Dataset = datasets("surface_forms")
     val Sounds: Dataset = datasets("sounds")
 
+    val InfoboxTemplateType: Dataset = datasets("infobox_template_type")
+    val InfoboxTemplateTypeDefinitions: Dataset = datasets("infobox_template_type_definitions")
     val TemplateType: Dataset = datasets("template_type")
     val TemplateTypeDefinitions: Dataset = datasets("template_type_definitions")
     val InfoboxPropertyRestrictions: Dataset = datasets("infobox_property_restrictions")

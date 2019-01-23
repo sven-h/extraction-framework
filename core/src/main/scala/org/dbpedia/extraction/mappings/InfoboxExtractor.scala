@@ -264,7 +264,9 @@ extends PageNodeExtractor
 
     private def extractLinks(node : PropertyNode) : List[ParseResult[String]] =
     {
-        val splitNodes = NodeUtil.splitPropertyNode(node, """\s*\W+\s*""")
+        var splitNodes = NodeUtil.splitPropertyNode(node, """\s*\W+\s*|\s*\*\s*""")//\s**\\n\s*
+        //filter out textnode to favor link nodes because later on link size is compared with splinode size
+        splitNodes = splitNodes.filter(_.children.find(_.isInstanceOf[TextNode]).isEmpty)
 
         splitNodes.flatMap(splitNode => objectParser.parse(splitNode)) match
         {

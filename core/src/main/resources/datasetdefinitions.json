@@ -215,6 +215,18 @@
       "desc": "French dataset about population.",
       "defaultgraph": "namespace"
     },
+    "infobox_template_type": {
+      "name": "Template Type with infobox",
+      "traits":"LinkedData, Published",
+      "desc": "Types from Templates with infobox",
+      "defaultgraph": "namespace"
+    },
+    "infobox_template_type_definitions": {
+      "name": "Template Type with infobox Definitions",
+      "traits":"LinkedData, Published",
+      "desc": "Template Type with infobox Definitions.",
+      "defaultgraph": "namespace"
+    },
     "template_type": {
       "name": "Template Type",
       "traits":"LinkedData, Published",

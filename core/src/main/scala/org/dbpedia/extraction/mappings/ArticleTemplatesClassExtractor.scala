@@ -23,15 +23,20 @@ class ArticleTemplatesClassExtractor(
   private val typeProperty = context.ontology.properties("rdf:type")
   private val labelProperty = context.ontology.properties("rdfs:label")
   private val owlClass = "http://www.w3.org/2002/07/owl#Class"
+  private val owlThing = "http://www.w3.org/2002/07/owl#Thing"
   private val rdfLangStrDt = context.ontology.datatypes("rdf:langString")
 
-  override val datasets = Set(DBpediaDatasets.TemplateType, DBpediaDatasets.TemplateTypeDefinitions)
+  override val datasets = Set(DBpediaDatasets.InfoboxTemplateType, DBpediaDatasets.InfoboxTemplateTypeDefinitions,
+    DBpediaDatasets.TemplateType, DBpediaDatasets.TemplateTypeDefinitions)
 
+  private val infoboxSeenClasses = HashSet[String]()
   private val seenClasses = HashSet[String]()
 
   override def extract(node: PageNode, subjectUri: String): Seq[Quad] = {
     var quads = new ArrayBuffer[Quad]()
-    for(template <- collectTemplatesTopLevel(node)){
+    var hasType = false
+    var templateNodes = collectTemplatesTopLevel(node)
+    for(template <- templateNodes){
       var titleLower = template.title.encoded.toLowerCase
       val indexInfoBox = titleLower.indexOf("infobox")
 
@@ -47,19 +52,44 @@ class ArticleTemplatesClassExtractor(
           title = title.substring(indexInfoBox + 7, title.length)
         }
         title = stripAll(title, " _-")
+        if(title.nonEmpty) {
+          //lowercase uri:
+          title = title.toLowerCase
+          var classUri = context.language.dbpediaUri + "/class/" + title
+          //println(titleLower)
+          hasType = true
+          quads += new Quad(context.language, DBpediaDatasets.InfoboxTemplateType, subjectUri, typeProperty, classUri, node.sourceIri)
 
-        var classUri = context.language.dbpediaUri + "/class/" + title
-        quads += new Quad(context.language, DBpediaDatasets.TemplateType, subjectUri, typeProperty,  classUri, node.sourceIri)
+          infoboxSeenClasses.synchronized {
+            if (!infoboxSeenClasses.contains(classUri)) {
+              var classLabel = template.title.decoded.replaceAll("(?i)infobox", "")
+              classLabel = stripAll(classLabel, " _-")
+              infoboxSeenClasses += classUri
+              quads += new Quad(context.language, DBpediaDatasets.InfoboxTemplateTypeDefinitions, classUri, typeProperty, owlClass, node.sourceIri)
+              quads += new Quad(context.language, DBpediaDatasets.InfoboxTemplateTypeDefinitions, classUri, labelProperty, classLabel, node.sourceIri, rdfLangStrDt)
+            }
+          }
+        }
+      }
+    }
 
-        seenClasses.synchronized
-        {
-          if (!seenClasses.contains(classUri))
-          {
-            var classLabel = template.title.decoded.replaceAll("(?i)infobox", "")
+    if(hasType == false){
+      var templateClassUri = owlThing //context.language.dbpediaUri + "/class/Thing"
+      var templateClassLabel = "Thing"
+      if(templateNodes.isEmpty){
+        quads += new Quad(context.language, DBpediaDatasets.TemplateType, subjectUri, typeProperty, owlThing, node.sourceIri)
+      }else{
+        var templateClassUri = context.language.dbpediaUri + "/class/" + templateNodes.head.title.encoded.toLowerCase
+
+        quads += new Quad(context.language, DBpediaDatasets.TemplateType, subjectUri, typeProperty, templateClassUri, node.sourceIri)
+
+        seenClasses.synchronized {
+          if (!seenClasses.contains(templateClassUri)) {
+            var classLabel = templateNodes.head.title.decoded
             classLabel = stripAll(classLabel, " _-")
-            seenClasses += classUri
-            quads += new Quad(context.language, DBpediaDatasets.TemplateTypeDefinitions, classUri, typeProperty, owlClass, node.sourceIri)
-            quads += new Quad(context.language, DBpediaDatasets.TemplateTypeDefinitions, classUri, labelProperty, classLabel, node.sourceIri, rdfLangStrDt)
+            seenClasses += templateClassUri
+            quads += new Quad(context.language, DBpediaDatasets.TemplateTypeDefinitions, templateClassUri, typeProperty, owlClass, node.sourceIri)
+            quads += new Quad(context.language, DBpediaDatasets.TemplateTypeDefinitions, templateClassUri, labelProperty, classLabel, node.sourceIri, rdfLangStrDt)
           }
         }
       }

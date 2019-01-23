@@ -126,7 +126,8 @@ object NodeUtil
                           currentNodes = currentNode :: currentNodes
                         }
                         currentNodes = currentNodes.reverse
-                        propertyNodes = PropertyNode(inputNode.key, currentNodes, inputNode.line) :: propertyNodes
+                        if(currentNodes.nonEmpty)
+                            propertyNodes = PropertyNode(inputNode.key, currentNodes, inputNode.line) :: propertyNodes
                         currentNodes = List[Node]()
                     }
                     else
