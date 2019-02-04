@@ -21,7 +21,7 @@ import scala.io.Codec
 import scala.util.{Failure, Success, Try}
 
 
-class Config(val configPath: String) extends
+class Config(val configPath: String, val baseDir: String = "") extends
   Properties(Config.universalProperties) with java.io.Serializable
 {
 
@@ -62,7 +62,13 @@ class Config(val configPath: String) extends
    * directly in the distributed extraction framework - DistConfig.ExtractionConfig extends Config
    * and overrides this val to null because it is not needed)
    */
-  lazy val dumpDir: File = getValue(this, "base-dir", required = true){ x => new File(x)}
+  lazy val dumpDir: File = {
+    if(baseDir.isEmpty){
+      getValue(this, "base-dir", required = true){ x => new File(x)}
+    }else{
+      new File(baseDir)
+    }
+  }
 
   /**
     * Number of parallel processes allowed. Depends on the number of cores, type of disk and IO speed

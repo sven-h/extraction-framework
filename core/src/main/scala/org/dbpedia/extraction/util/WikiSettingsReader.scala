@@ -16,7 +16,9 @@ class WikiSettings (
   /** name -> aliases */
   val magicwords: Map[String, Set[String]], 
   /** prefix -> url pattern using "$1" as place holder */
-  val interwikis: Map[String, String]
+  val interwikis: Map[String, String],
+  /** prefix -> is local */
+  val interwikiLocal: Map[String, Boolean]
 )
 
 object WikiSettingsReader {
@@ -57,8 +59,8 @@ class WikiSettingsReader(in: XMLEventAnalyzer) {
           val namespaces = readNamespaces("namespaces", true)
           val aliases = readNamespaces("namespacealiases", false)
           val magicwords = readMagicWords()
-          val interwikis = readInterwikis()
-          new WikiSettings(namespaces, aliases, magicwords, interwikis)
+          val (interwikis, interwikiLocal) = readInterwikis()
+          new WikiSettings(namespaces, aliases, magicwords, interwikis, interwikiLocal)
         }
       }
     }
@@ -107,17 +109,18 @@ class WikiSettingsReader(in: XMLEventAnalyzer) {
     }
   }
   
-  private def readInterwikis(): Map[String, String] = {
+  private def readInterwikis(): (Map[String, String], Map[String, Boolean]) = {
     in.element("interwikimap") { _ =>
       // LinkedHashMap to preserve order (although it's probably not important)
       val interwikis = new LinkedHashMap[String, String]
+      val interwikilocal = new LinkedHashMap[String, Boolean]
       in.elements("iw") { iw =>
         interwikis(iw attr "prefix") = iw attr "url"
+        interwikilocal(iw attr "prefix") = iw.getAttr("local").isDefined
       }
-      interwikis
+      (interwikis, interwikilocal)
     }
   }
-
 }
 
 
@@ -134,7 +137,8 @@ class WikiSettingsReaderJson(root: JsonNode) {
     val aliases = readNamespaceAliases()
     val magicwords = readMagicWords()
     val interwikis = readInterwikis()
-    new WikiSettings(namespaces, aliases, magicwords, interwikis)
+    val interwikiLocal = readInterwikiLocal()
+    new WikiSettings(namespaces, aliases, magicwords, interwikis, interwikiLocal)
   }
 
   private def readNamespaces() : Map[String, Int] = {
@@ -180,6 +184,16 @@ class WikiSettingsReaderJson(root: JsonNode) {
       val prefix = elem.path("prefix").textValue()
       val url = elem.path("url").textValue()
       interwikis(prefix) = url
+    }
+    interwikis
+  }
+
+  private def readInterwikiLocal(): Map[String, Boolean] = {
+    val interwikis = new LinkedHashMap[String, Boolean]
+    for(elem <- root.path("query").path("interwikimap").elements().asScala){
+      val prefix = elem.path("prefix").textValue()
+      //val url = elem.
+      interwikis(prefix) = elem.has("local")
     }
     interwikis
   }

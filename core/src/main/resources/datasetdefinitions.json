@@ -256,6 +256,18 @@
       "traits":"LinkedData, Published",
       "desc": "Triples extracted from abstracts.",
       "defaultgraph": "namespace"
+    },
+    "tag_properties": {
+      "name": "Tag properties",
+      "traits":"LinkedData, Published",
+      "desc": "Triples extracted from xml tags",
+      "defaultgraph": "namespace"
+    },
+    "tag_property_definitions": {
+      "name": "Tag property definitions",
+      "traits":"LinkedData, Published",
+      "desc": "Definition of predicates extracted from xml tags",
+      "defaultgraph": "namespace"
     }
     
   },

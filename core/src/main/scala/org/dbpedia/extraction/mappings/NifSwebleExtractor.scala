@@ -1,10 +1,12 @@
 package org.dbpedia.extraction.mappings
 
+import de.fau.cs.osr.ptk.common.AstPrinter
+import java.io.PrintWriter
 import org.dbpedia.extraction.annotations.ExtractorAnnotation
 import org.dbpedia.extraction.config.Config
 import org.dbpedia.extraction.config.provenance.DBpediaDatasets
-import org.dbpedia.extraction.nif.WikipediaNifExtractor
-import org.dbpedia.extraction.ontology.Ontology
+import org.dbpedia.extraction.nif.{TextConvert, WikipediaNifExtractor}
+import org.dbpedia.extraction.ontology.{Ontology, OntologyProperty}
 import org.dbpedia.extraction.transform.Quad
 import org.dbpedia.extraction.util.{Language, WikiSettings}
 import org.dbpedia.extraction.wikiparser._
@@ -15,9 +17,11 @@ import org.sweble.wikitext.engine.output.HtmlRenderer
 import org.sweble.wikitext.engine.output.HtmlRendererCallback
 import org.sweble.wikitext.engine.output.MediaInfo
 import org.sweble.wikitext.engine.utils.UrlEncoding
-import org.sweble.wikitext.parser.nodes.WtUrl
+import org.sweble.wikitext.parser.nodes.{WtNode, WtUrl}
 import org.apache.commons.lang3.StringEscapeUtils
+import org.sweble.wikitext.engine.nodes.{EngPage, EngProcessedPage}
 
+import scala.collection.mutable.ArrayBuffer
 import scala.language.reflectiveCalls
 
 /**
@@ -40,8 +44,16 @@ class NifSwebleExtractor(
                   )
   extends WikiPageExtractor
 {
+  override val datasets = Set(DBpediaDatasets.NifContext,DBpediaDatasets.NifPageStructure,DBpediaDatasets.NifTextLinks,DBpediaDatasets.LongAbstracts, DBpediaDatasets.ShortAbstracts, DBpediaDatasets.RawTables, DBpediaDatasets.Equations)
+
   var config: WikiConfig = getSwebleConfig()
   var engine = new WtEngineImpl(config)
+  //var textConverter =
+
+  protected val shortAbstractLength: Int = context.configFile.abstractParameters.shortAbstractMinLength
+
+  protected lazy val shortProperty: OntologyProperty = context.ontology.properties(context.configFile.abstractParameters.shortAbstractsProperty)
+  protected lazy val longProperty: OntologyProperty = context.ontology.properties(context.configFile.abstractParameters.longAbstractsProperty)
 
   def getSwebleConfig(): WikiConfig = {
     //https://github.com/sweble/sweble-wikitext/blob/develop/sweble-wikitext-components-parent/swc-engine/src/main/java/org/sweble/wikitext/engine/utils/LanguageConfigGenerator.java
@@ -49,21 +61,30 @@ class NifSwebleExtractor(
     import collection.JavaConverters._
 
     var config = DefaultConfigEnWp.generate()
+    config.getParserConfig.setAutoCorrect(true)
 
     for ((prefix, url) <- context.wikiSettings.interwikis) {
       if(config.getInterwiki(prefix) == null)
-        config.addInterwiki(new InterwikiImpl(prefix, url, url.contains(".wikia.com"),false))
+        config.addInterwiki(new InterwikiImpl(prefix, url, context.wikiSettings.interwikiLocal.getOrElse(prefix, false),false))
     }
     for ((name, alias) <- context.wikiSettings.magicwords) {
       if (config.getI18nAliasById(name) == null && alias.forall(p => config.getI18nAlias(p) == null))
         config.addI18nAlias(new I18nAliasImpl(name, false, alias.asJavaCollection))
     }
-    //TODO: namespace alisas and namespace
     config
   }
 
-
-  override val datasets = Set(DBpediaDatasets.NifContext,DBpediaDatasets.NifPageStructure,DBpediaDatasets.NifTextLinks,DBpediaDatasets.LongAbstracts, DBpediaDatasets.ShortAbstracts, DBpediaDatasets.RawTables, DBpediaDatasets.Equations)
+  def getShortAbstract(text: String): String = {
+    val builder = StringBuilder.newBuilder
+    for (p <- text.split("\\.")) {
+      if (builder.length <= shortAbstractLength || builder.length + p.length < shortAbstractLength * 3)
+      {
+        builder.append(p)
+        builder.append(".")
+      }
+    }
+    builder.toString()
+  }
 
   override def extract(pageNode : WikiPage, subjectUri : String): Seq[Quad] =
   {
@@ -79,18 +100,34 @@ class NifSwebleExtractor(
 
     val source = StringEscapeUtils.unescapeXml(pageNode.source)
 
-    try {
-      val cp = engine.postprocess(pageId, source, new MyExpansionCallback(context.templates))
-      var html = HtmlRenderer.print(new MyRendererCallback, config, pageTitle, cp.getPage)
+    var quads = new ArrayBuffer[Quad]()
+
+
+    scala.util.control.Exception.ignoring(classOf[Exception]) {
+      val page = engine.postprocess(pageId, source,new MyExpansionCallback(context.templates)).getPage
+      //new PrintWriter(pageNode.title.decoded + "_ast_expansion") { write(AstPrinter.print[WtNode](page)); close }
+      var html = HtmlRenderer.print(new MyRendererCallback, config, pageTitle, page)
       html = StringEscapeUtils.unescapeXml(html)
       //parser currently do not remove magic words:
-      html = html.replace("__NOTOC__", "")
-      return new WikipediaNifExtractor(context, pageNode).extractNif(html)(err => pageNode.addExtractionRecord(err))
+      html = html.replaceAll("__.*?__", "")
+      //new PrintWriter(pageNode.title.decoded + "_html") { write(html); close }
+      quads ++= new WikipediaNifExtractor(context, pageNode).extractNif(html)(err => pageNode.addExtractionRecord(err))
     }
-    catch {
-      case ex: Exception => return Seq.empty
+
+    //Backup for short and long abstracts
+    if(!quads.exists(q=>q.predicate==shortProperty.uri||q.predicate==longProperty.uri)) scala.util.control.Exception.ignoring(classOf[Exception]) {
+      scala.util.control.Exception.ignoring(classOf[Exception]) {
+        val page = engine.postprocess(pageId, source,null).getPage
+        //new PrintWriter(pageNode.title.decoded + "_ast") { write(AstPrinter.print[WtNode](page)); close }
+        var text = new TextConvert(config).go(page).asInstanceOf[String]
+        text = text.replaceAll("__.*?__", "")
+        //new PrintWriter(pageNode.title.decoded + "_text") { write(text); close }
+        quads += new Quad(context.language, DBpediaDatasets.ShortAbstracts, subjectUri, shortProperty,  getShortAbstract(text), pageNode.uri)
+        quads += new Quad(context.language, DBpediaDatasets.LongAbstracts, subjectUri, longProperty, text, pageNode.uri)
+      }
     }
-    return Seq.empty
+
+    quads
   }
 }
 

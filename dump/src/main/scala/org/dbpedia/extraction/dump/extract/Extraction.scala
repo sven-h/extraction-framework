@@ -21,13 +21,17 @@ object Extraction {
 
   def main(args: Array[String]): Unit = {
 
-    require(args != null && args.length >= 2 && args(0).nonEmpty && args(1).nonEmpty, "missing required argument: config file name and/or wikibase")
+    require(args != null && args.length >= 2 && args(0).nonEmpty && args(1).nonEmpty,
+      "you don't provide 2 arguments: (1)config file name, (2)wikibase (3)dump directory (optional)")
     Authenticator.setDefault(new ProxyAuthenticator())
-
+    var dumpDir = ""
+    if(args.length >= 3 && args(2).nonEmpty){
+      dumpDir = args(2)
+    }
     Language.updateAllLanguages(args(1))
 
     //Load extraction jobs from configuration
-    val config = new Config(args(0))
+    val config = new Config(args(0), dumpDir)
     val configLoader = new ConfigLoader(config)
 
     val parallelProcesses = if(config.runJobsInParallel) config.parallelProcesses else 1

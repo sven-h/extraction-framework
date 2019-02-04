@@ -78,7 +78,7 @@ class ConfigLoader(config: Config)
     val jsonMapper = new ObjectMapper()
     val language = input._1
 
-    var _settings = new WikiSettings(Map(), Map(), Map(), Map())
+    var _settings = new WikiSettings(Map(), Map(), Map(), Map(), Map())
     try {
       finder.file(date, "wiki-settings.obj") match {
         case Some(cache) => new LazyWikiCaller(new URL(language.apiUri + "?" + WikiSettingsReader.query), true, cache, false).execute {

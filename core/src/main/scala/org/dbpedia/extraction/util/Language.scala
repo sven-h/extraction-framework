@@ -141,20 +141,17 @@ object Language extends (String => Language)
 
       def updateInterwikis(interwikis : scala.collection.Map[String, String]):Unit={
         for ((prefix, url) <- interwikis) {
-          val start = url.indexOf("http://")
-          val end = url.indexOf(".wikia.com")
-          if (start != -1 && end != -1 ){//&& prefix != "en"){
-            Language.updateOneLanguage(prefix, url.substring(start+7, end))
-          }
+          Language.updateOneLanguage(prefix, url.stripPrefix("http://").stripSuffix("/$1").stripSuffix("/wiki"))
         }
+        print("test")
       }
 
-      def updateAllLanguages(wiki:String): Unit ={
+      def updateAllLanguages(wikiBase: String): Unit ={
         //map.clear()//do not clear because we want to keep "mappings", "wikidata" etc.
         for(lang <- wikiLanguageCodes)
         {
           try {
-            map(lang) = makeDbkwikLanguage(lang, wiki)
+            map(lang) = makeDbkwikLanguage(lang, wikiBase)
           }
           catch{
             case mre : MissingResourceException => logger.log(Level.WARNING, "Could not create the language: " + lang)
@@ -162,7 +159,7 @@ object Language extends (String => Language)
         }
         map("commons") = new Language("commons", "Commons", "en", "eng", "commons.dbpedia.org", "http://commons.dbpedia.org",
           new DBpediaNamespace("http://commons.dbpedia.org/resource/"), new DBpediaNamespace("http://commons.dbpedia.org/property/"),
-          "http://"+wiki+".wikia.com", "http://"+wiki+".wikia.com/w/api.php", 10000000)
+          "http://"+wikiBase, "http://"+wikiBase + "/api.php", 10000000)
 
         English = map("en")
         Commons = map("commons")
@@ -170,9 +167,10 @@ object Language extends (String => Language)
 
 
 
-      def makeDbkwikLanguage(language : String, wiki: String): Language = {
-        val baseDomain = "dbkwik.webdatacommons.org/" + wiki
-        val wikiBase = wiki+".wikia.com"
+      def makeDbkwikLanguage(language : String, wikiBase: String): Language = {
+
+        val baseDomain = "dbkwik.webdatacommons.org/" + wikiBase
+
         val loc = Locale.forLanguageTag(language)
 
         var iso3 = language
@@ -189,8 +187,8 @@ object Language extends (String => Language)
           "http://" + baseDomain,   //val dbpediaUri: String,
           new DBpediaNamespace("http://" + baseDomain + "/resource/"), //val resourceUri: RdfNamespace,
           new DBpediaNamespace("http://" + baseDomain + "/property/"), //val propertyUri: RdfNamespace,
-          "http://"+wikiBase,               //val baseUri: String,
-          "https://"+wikiBase+"/api.php", //val apiUri: String,
+          "http://"+wikiBase.stripPrefix("http://"),               //val baseUri: String,
+          "https://"+wikiBase.stripPrefix("http://")+"/api.php", //val apiUri: String,
           0                                 //val pages: Int
         )
       }

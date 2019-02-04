@@ -175,6 +175,8 @@ object DBpediaDatasets extends java.io.Serializable
     val InfoboxPropertyRestrictions: Dataset = datasets("infobox_property_restrictions")
     val SdTypesLight: Dataset = datasets("sd_types_light")
     val RelationExtraction: Dataset = datasets("relation_extraction")
+    val TagProperties: Dataset = datasets("tag_properties")
+    val TagPropertiesDefinitions: Dataset = datasets("tag_property_definitions")
 
     /**
      * Mapping based
