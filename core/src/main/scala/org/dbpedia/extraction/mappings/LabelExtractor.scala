@@ -7,6 +7,7 @@ import org.dbpedia.extraction.transform.Quad
 import org.dbpedia.extraction.util.{ExtractorUtils, Language}
 import org.dbpedia.extraction.wikiparser._
 
+import scala.collection.mutable.ArrayBuffer
 import scala.language.reflectiveCalls
 
 /**
@@ -22,6 +23,7 @@ extends WikiPageExtractor
 {
 
   val labelProperty = context.ontology.properties("rdfs:label")
+  val prefLabelProperty = "http://www.w3.org/2004/02/skos/core#prefLabel"
   
   override val datasets = Set(DBpediaDatasets.Labels)
 
@@ -32,8 +34,18 @@ extends WikiPageExtractor
     // TODO: use templates like {{lowercase}}, magic words like {{DISPLAYTITLE}}, 
     // remove stuff like "(1999 film)" from title...
     val label = page.title.decoded
-    
-    if(label.isEmpty) Seq.empty
-    else Seq(new Quad(context.language, DBpediaDatasets.Labels, subjectUri, labelProperty, label, page.sourceIri, context.ontology.datatypes("rdf:langString")))
+
+
+    val quads = new ArrayBuffer[Quad]()
+
+    if(label.isEmpty)
+      return Seq.empty
+
+    quads += new Quad(context.language, DBpediaDatasets.Labels, subjectUri, labelProperty, label, page.sourceIri, context.ontology.datatypes("rdf:langString"))
+
+    if(!page.isRedirect && !page.isDisambiguation)
+      quads += new Quad(context.language, DBpediaDatasets.Labels, subjectUri, prefLabelProperty, label, page.sourceIri, context.ontology.datatypes("rdf:langString"))
+
+    quads
   }
 }
