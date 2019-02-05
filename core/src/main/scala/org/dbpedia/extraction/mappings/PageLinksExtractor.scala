@@ -28,6 +28,8 @@ extends PageNodeExtractor
   {
     if(node.title.namespace != Namespace.Main && !ExtractorUtils.titleContainsCommonsMetadata(node.title)) 
         return Seq.empty
+
+    if(node.isRedirect) return Seq.empty
     
     val list = ExtractorUtils.collectInternalLinksFromNode(node)
 

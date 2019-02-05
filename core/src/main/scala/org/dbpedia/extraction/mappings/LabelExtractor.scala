@@ -23,7 +23,7 @@ extends WikiPageExtractor
 {
 
   val labelProperty = context.ontology.properties("rdfs:label")
-  val prefLabelProperty = "http://www.w3.org/2004/02/skos/core#prefLabel"
+  val altLabelProperty = "http://www.w3.org/2004/02/skos/core#altLabel"
   
   override val datasets = Set(DBpediaDatasets.Labels)
 
@@ -41,10 +41,10 @@ extends WikiPageExtractor
     if(label.isEmpty)
       return Seq.empty
 
-    quads += new Quad(context.language, DBpediaDatasets.Labels, subjectUri, labelProperty, label, page.sourceIri, context.ontology.datatypes("rdf:langString"))
+    quads += new Quad(context.language, DBpediaDatasets.Labels, subjectUri, altLabelProperty, label, page.sourceIri, context.ontology.datatypes("rdf:langString"))
 
     if(!page.isRedirect && !page.isDisambiguation)
-      quads += new Quad(context.language, DBpediaDatasets.Labels, subjectUri, prefLabelProperty, label, page.sourceIri, context.ontology.datatypes("rdf:langString"))
+      quads += new Quad(context.language, DBpediaDatasets.Labels, subjectUri, labelProperty, label, page.sourceIri, context.ontology.datatypes("rdf:langString"))
 
     quads
   }

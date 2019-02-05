@@ -32,6 +32,7 @@ extends PageNodeExtractor
   {
     if(page.title.namespace != Namespace.Main && !ExtractorUtils.titleContainsCommonsMetadata(page.title)) 
         return Seq.empty
+    if(page.isRedirect) return Seq.empty
     
     val quads = new ArrayBuffer[Quad]()
 

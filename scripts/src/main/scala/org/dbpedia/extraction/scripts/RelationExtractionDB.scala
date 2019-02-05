@@ -53,11 +53,15 @@ object RelationExtractionDB {
     //https://github.com/MaLeLabTs/RegexGenerator
     //https://2018.eswc-conferences.org/wp-content/uploads/2018/02/ESWC2018_paper_136.pdf
 
-    require(args != null && args.length >= 1,
-      "need one arg: " +
-        /*0*/ "languages or article count ranges (e.g. 'en,fr' or '10000-')")
+    require(args != null && args.length >= 2,
+      "need two arg: " +
+        /*0*/ "base dir of the extraction" +
+        /*1*/ "languages or article count ranges (e.g. 'en,fr' or '10000-')")
 
-    val config = new Config(null);
+    val baseDirString = args(0)
+    require(baseDirString.nonEmpty, "no basedir")
+
+    val config = new Config(null, baseDirString);
 
     val baseDir = config.dumpDir
 
