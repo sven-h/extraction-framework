@@ -208,7 +208,7 @@ object UriPolicy {
       uri =>
       // host can be null for some URIs, e.g. java.net.URI doesn't understand IDN
         val host = uri.getHost
-        host != null && (host.equals("dbpedia.org") || host.endsWith(".dbpedia.org"))
+        host != null && (host.equals("dbpedia.org") || host.endsWith(".dbpedia.org") || host.equals("dbkwik.webdatacommons.org") || host.endsWith("webdatacommons.org"))
     }
     else {
       // "-" handles the generic domain

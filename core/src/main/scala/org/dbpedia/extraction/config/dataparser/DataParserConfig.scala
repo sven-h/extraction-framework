@@ -34,7 +34,7 @@ object DataParserConfig {
   )
 
   val splitPropertyNodeRegexInfobox  = Map (
-    "en" -> """<br\s*\/?>"""
+    "en" -> """<br\s*\/?>|\*""" //added * because some values of infoboxes contains a list (separated by *)
   )
 
   // Templates used instead of <br>

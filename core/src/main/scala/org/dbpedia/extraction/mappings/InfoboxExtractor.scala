@@ -95,6 +95,8 @@ extends PageNodeExtractor
                                   
     private val objectParser = new ObjectParser(context, true)
 
+    private val objectParserUnstrict = new ObjectParser(context, false)
+
     private val linkParser = new LinkParser(true)
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -188,6 +190,7 @@ extends PageNodeExtractor
             case links if links.nonEmpty => return links
             case _ =>
         }
+        extractLinksSurfaceForm(node).foreach(result => return List(result))
         StringParser.parse(node).map(value => ParseResult(value.value, None, Some(rdfLangStrDt))).toList
     }
 
@@ -264,7 +267,7 @@ extends PageNodeExtractor
 
     private def extractLinks(node : PropertyNode) : List[ParseResult[String]] =
     {
-        var splitNodes = NodeUtil.splitPropertyNode(node, """\s*\W+\s*|\s*\*\s*""")//\s**\\n\s*
+        var splitNodes = NodeUtil.splitPropertyNode(node, """\s*\W+\s*""")
         //filter out textnode to favor link nodes because later on link size is compared with splinode size
         splitNodes = splitNodes.filter(_.children.find(_.isInstanceOf[TextNode]).isEmpty)
 
@@ -281,6 +284,11 @@ extends PageNodeExtractor
             case links if links.size == splitNodes.size => links.map(x => UriUtils.cleanLink(x.value)).collect{case Some(link) => ParseResult(link, None, Some(null))}
             case _ => List.empty
         }
+    }
+
+    private def extractLinksSurfaceForm(node : PropertyNode) : Option[ParseResult[String]] =
+    {
+        objectParserUnstrict.parse(node).map(pr => ParseResult(pr.value, None, Some(null)))
     }
     
     private def getPropertyUri(key : String) : String =
