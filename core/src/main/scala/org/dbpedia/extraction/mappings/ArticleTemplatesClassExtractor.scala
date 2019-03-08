@@ -85,13 +85,15 @@ class ArticleTemplatesClassExtractor(
       if(templateNodes.isEmpty){
         quads += new Quad(context.language, DBpediaDatasets.TemplateType, subjectUri, typeProperty, owlThing, node.sourceIri)
       }else{
-        var templateClassUri = context.language.dbpediaUri + "/class/" + templateNodes.head.title.encoded.toLowerCase
+        var selectedTemplateNode = templateNodes.sortBy(_.children.length).last
+
+        var templateClassUri = context.language.dbpediaUri + "/class/" + selectedTemplateNode.title.encoded.toLowerCase
 
         quads += new Quad(context.language, DBpediaDatasets.TemplateType, subjectUri, typeProperty, templateClassUri, node.sourceIri)
 
         seenClasses.synchronized {
           if (!seenClasses.contains(templateClassUri)) {
-            var classLabel = templateNodes.head.title.decoded
+            var classLabel = selectedTemplateNode.title.decoded
             classLabel = stripAll(classLabel, " _-")
             seenClasses += templateClassUri
             quads += new Quad(context.language, DBpediaDatasets.TemplateTypeDefinitions, templateClassUri, typeProperty, owlClass, node.sourceIri)
@@ -99,7 +101,6 @@ class ArticleTemplatesClassExtractor(
           }
         }
       }
-
     }
     quads
   }
