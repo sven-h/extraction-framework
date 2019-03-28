@@ -1,7 +1,9 @@
 package org.dbpedia.extraction.wikiparser
 
+import org.dbpedia.extraction.ontology.RdfNamespace
 import org.dbpedia.extraction.util.RichString.wrapString
-import org.dbpedia.extraction.util.{Language, WikiUtil}
+import org.dbpedia.extraction.util.StringUtils.replacements
+import org.dbpedia.extraction.util.{Language, StringUtils, WikiUtil}
 import org.dbpedia.iri.UriDecoder
 import org.dbpedia.util.text.ParseExceptionIgnorer
 import org.dbpedia.util.text.html.{HtmlCoder, XmlCodes}
@@ -41,7 +43,7 @@ class WikiTitle (
     val encodedWithNamespace = withNamespace(true)
 
     /** page IRI for this page title */
-    val pageIri = language.baseUri+"/wiki/"+encodedWithNamespace
+    val pageIri = language.baseUri+"/wiki/"+StringUtils.escape(encodedWithNamespace, WikiTitle.iriEscapes)
 
     /** resource IRI for this page title */
     val resourceIri = language.resourceUri.append(encodedWithNamespace)
@@ -92,6 +94,12 @@ class WikiTitle (
 
 object WikiTitle
 {
+    // for this list of characters, see RFC 3987 and https://sourceforge.net/mailarchive/message.php?msg_id=28982391
+    private val iriEscapes = {
+      val chars = ('\u0000' to '\u0020').mkString + "\"#%<>?[\\]^`{|}" + ('\u007F' to '\u009F').mkString
+      replacements('%', chars)
+    }
+
     /**
      * Parses a MediaWiki link or title.
      *

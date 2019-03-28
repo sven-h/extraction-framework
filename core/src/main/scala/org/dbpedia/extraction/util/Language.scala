@@ -124,7 +124,7 @@ object Language extends (String => Language)
         for(lang <- wikiLanguageCodes)
         {
           try {
-            languages(lang) = makeDbkwikLanguage(lang, "default")
+            languages(lang) = makeDbkwikLanguage(lang, "default", true)
           }
           catch{
             case mre : MissingResourceException => logger.log(Level.WARNING, "Could not create the language: " + lang)
@@ -134,24 +134,38 @@ object Language extends (String => Language)
       }
 
 
-      def updateOneLanguage(wikiprefix : String, wiki: String):Unit={
-        map(wikiprefix) = makeDbkwikLanguage(wikiprefix,  wiki)
-        English = map("en")
+      def preprocessWikiBase(wikiBase: String): String ={
+        //return new java.net.URI(wikiBase).getScheme()
+        return wikiBase.stripPrefix("http://").stripPrefix("https://").stripSuffix("/$1").stripSuffix("/wiki")
+      }
+
+      def getLanguageFreeWikiBase(wikiBase: String): String ={
+        var base = preprocessWikiBase(wikiBase)
+        var splits = base.split("\\.")
+        if(splits.length > 1){
+          if(wikiLanguageCodes.contains(splits(0))){
+            var test = splits.slice(1, splits.length).mkString(".")
+            return test
+          }
+        }
+        return base
       }
 
       def updateInterwikis(interwikis : scala.collection.Map[String, String]):Unit={
         for ((prefix, url) <- interwikis) {
-          Language.updateOneLanguage(prefix, url.stripPrefix("http://").stripSuffix("/$1").stripSuffix("/wiki"))
+          if(url.contains("fandom") || url.contains("wikia"))
+            map(prefix) = makeDbkwikLanguage(prefix,  preprocessWikiBase(url), false)
         }
-        print("test")
+        English = map("en")
       }
 
-      def updateAllLanguages(wikiBase: String): Unit ={
+      def updateAllLanguages(base: String): Unit ={
         //map.clear()//do not clear because we want to keep "mappings", "wikidata" etc.
+        var wikiBase = getLanguageFreeWikiBase(base)
         for(lang <- wikiLanguageCodes)
         {
           try {
-            map(lang) = makeDbkwikLanguage(lang, wikiBase)
+            map(lang) = makeDbkwikLanguage(lang, wikiBase, true)
           }
           catch{
             case mre : MissingResourceException => logger.log(Level.WARNING, "Could not create the language: " + lang)
@@ -167,9 +181,14 @@ object Language extends (String => Language)
 
 
 
-      def makeDbkwikLanguage(language : String, wikiBase: String): Language = {
+      def makeDbkwikLanguage(language : String, wikiBase: String, modifyBase: Boolean): Language = {
+        var base = wikiBase
+        if(language.equals("en") == false && modifyBase){
+          base = language + "." + base
+        }
 
-        val baseDomain = "dbkwik.webdatacommons.org/" + wikiBase
+
+        val baseDomain = "dbkwik.webdatacommons.org/" + base
 
         val loc = Locale.forLanguageTag(language)
 
@@ -187,8 +206,8 @@ object Language extends (String => Language)
           "http://" + baseDomain,   //val dbpediaUri: String,
           new DBpediaNamespace("http://" + baseDomain + "/resource/"), //val resourceUri: RdfNamespace,
           new DBpediaNamespace("http://" + baseDomain + "/property/"), //val propertyUri: RdfNamespace,
-          "http://"+wikiBase.stripPrefix("http://"),               //val baseUri: String,
-          "https://"+wikiBase.stripPrefix("http://")+"/api.php", //val apiUri: String,
+          "http://"+ base,               //val baseUri: String,
+          "https://"+ base + "/api.php", //val apiUri: String,
           0                                 //val pages: Int
         )
       }
