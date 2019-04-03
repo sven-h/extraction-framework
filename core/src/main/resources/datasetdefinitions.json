@@ -143,6 +143,12 @@
       "desc": "Dataset linking a DBpedia resource to the same resource in other languages and in Wikidata.",
       "defaultgraph": "dataset"
     },
+    "interwiki_links": {
+      "name": "InterWiki Links",
+      "traits":"LinkedData, Published",
+      "desc": "Dataset linking a DBpedia resource to the same resource in other wikis.",
+      "defaultgraph": "dataset"
+    },    
     "interlanguage_links_chapters": {
       "name": "Interlanguage Links between DBpedia Chapters",
       "traits":"LinkedData, Published",
@@ -268,8 +274,13 @@
       "traits":"LinkedData, Published",
       "desc": "Definition of predicates extracted from xml tags",
       "defaultgraph": "namespace"
+    },
+    "interwiki_sameas": {
+      "name": "Interwiki Sameas Links",
+      "traits":"LinkedData, Published",
+      "desc": "Links between wiki articles which share the same meaning",
+      "defaultgraph": "namespace"
     }
-    
   },
   "mappings_based":{
     "instance_types": {

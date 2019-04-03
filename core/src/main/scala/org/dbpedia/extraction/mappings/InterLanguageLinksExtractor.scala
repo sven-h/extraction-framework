@@ -16,12 +16,14 @@ class InterLanguageLinksExtractor(context: { def ontology : Ontology; def langua
 {
   private val sameAsProperty = context.ontology.properties("owl:sameAs")
 
-  override val datasets = Set(DBpediaDatasets.InterLanguageLinks)
+  override val datasets = Set(DBpediaDatasets.InterLanguageLinks,DBpediaDatasets.InterWikiLinks)
   
   private val namespaces = if (context.language == Language.Commons) ExtractorUtils.commonsNamespacesContainingMetadata
     else Set(Namespace.Main, Namespace.Template, Namespace.Category)
   
-  private val quad = QuadBuilder.apply(context.language, DBpediaDatasets.InterLanguageLinks, sameAsProperty, null) _
+  private val quadInterLang = QuadBuilder.apply(context.language, DBpediaDatasets.InterLanguageLinks, sameAsProperty, null) _
+  val wikiPageWikiLinkProperty = context.ontology.properties("wikiPageInterWikiLink")
+  private val quadInterWiki = QuadBuilder.apply(context.language, DBpediaDatasets.InterWikiLinks, wikiPageWikiLinkProperty, null) _
 
   override def extract(page : PageNode, subjectUri : String) : Seq[Quad] =
   {
@@ -34,8 +36,9 @@ class InterLanguageLinksExtractor(context: { def ontology : Ontology; def langua
         case link: InterWikiLinkNode => {
           val dst = link.destination
           if (dst.isInterLanguageLink) {
-            val dstLang = dst.language
-            quads += quad(subjectUri, dstLang.resourceUri.append(dst.decodedWithNamespace), link.sourceIri)
+            quads += quadInterLang(subjectUri, dst.language.resourceUri.append(dst.decodedWithNamespace), link.sourceIri)
+          }else{
+            quads += quadInterWiki(subjectUri, dst.language.resourceUri.append(dst.decodedWithNamespace), link.sourceIri)
           }
         }
         case _ => // ignore

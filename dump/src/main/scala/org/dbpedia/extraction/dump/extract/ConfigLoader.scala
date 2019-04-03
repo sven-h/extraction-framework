@@ -78,7 +78,7 @@ class ConfigLoader(config: Config)
     val jsonMapper = new ObjectMapper()
     val language = input._1
 
-    var _settings = new WikiSettings(Map(), Map(), Map(), Map(), Map())
+    var _settings = new WikiSettings(Map(), Map(), Map(), Map(), Map(), Map())
     try {
       finder.file(date, "wiki-settings.obj") match {
         case Some(cache) => new LazyWikiCaller(new URL(language.apiUri + "?" + WikiSettingsReader.query), true, cache, false).execute {
@@ -93,9 +93,10 @@ class ConfigLoader(config: Config)
             }
           }
         }
+        case None => {}
       }
     } catch { case NonFatal(ex) => {logger.warning("Could not load WikiSettings - error: " + ex.getMessage)} }
-    Language.updateInterwikis(_settings.interwikis)
+    Language.updateInterwikis(_settings.interwikis, _settings.interwikiLanguage)
     
     //Extraction Context
     val context = new DumpExtractionContext

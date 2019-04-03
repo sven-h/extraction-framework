@@ -2,12 +2,13 @@ package org.dbpedia.extraction.mappings
 
 import de.fau.cs.osr.ptk.common.AstPrinter
 import java.io.PrintWriter
+
 import org.dbpedia.extraction.annotations.ExtractorAnnotation
 import org.dbpedia.extraction.config.Config
 import org.dbpedia.extraction.config.provenance.DBpediaDatasets
 import org.dbpedia.extraction.nif.{TextConvert, WikipediaNifExtractor}
 import org.dbpedia.extraction.ontology.{Ontology, OntologyProperty}
-import org.dbpedia.extraction.transform.Quad
+import org.dbpedia.extraction.transform.{Quad, QuadBuilder}
 import org.dbpedia.extraction.util.{Language, WikiSettings}
 import org.dbpedia.extraction.wikiparser._
 import org.sweble.wikitext.engine._
@@ -21,6 +22,8 @@ import org.sweble.wikitext.parser.nodes.{WtNode, WtUrl}
 import org.apache.commons.lang3.StringEscapeUtils
 import org.sweble.wikitext.engine.nodes.{EngPage, EngProcessedPage}
 
+import scala.collection.JavaConversions._
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.language.reflectiveCalls
 
@@ -44,7 +47,7 @@ class NifSwebleExtractor(
                   )
   extends WikiPageExtractor
 {
-  override val datasets = Set(DBpediaDatasets.NifContext,DBpediaDatasets.NifPageStructure,DBpediaDatasets.NifTextLinks,DBpediaDatasets.LongAbstracts, DBpediaDatasets.ShortAbstracts, DBpediaDatasets.RawTables, DBpediaDatasets.Equations)
+  override val datasets = Set(DBpediaDatasets.NifContext,DBpediaDatasets.NifPageStructure,DBpediaDatasets.NifTextLinks,DBpediaDatasets.LongAbstracts, DBpediaDatasets.ShortAbstracts, DBpediaDatasets.RawTables, DBpediaDatasets.Equations, DBpediaDatasets.InterWikiLinks)
 
   var config: WikiConfig = getSwebleConfig()
   var engine = new WtEngineImpl(config)
@@ -54,6 +57,9 @@ class NifSwebleExtractor(
 
   protected lazy val shortProperty: OntologyProperty = context.ontology.properties(context.configFile.abstractParameters.shortAbstractsProperty)
   protected lazy val longProperty: OntologyProperty = context.ontology.properties(context.configFile.abstractParameters.longAbstractsProperty)
+
+  val wikiPageWikiLinkProperty = context.ontology.properties("wikiPageInterWikiLink")
+  private val interWikiQuad = QuadBuilder.apply(context.language, DBpediaDatasets.InterWikiLinks, wikiPageWikiLinkProperty, null) _
 
   def getSwebleConfig(): WikiConfig = {
     //https://github.com/sweble/sweble-wikitext/blob/develop/sweble-wikitext-components-parent/swc-engine/src/main/java/org/sweble/wikitext/engine/utils/LanguageConfigGenerator.java
@@ -102,9 +108,23 @@ class NifSwebleExtractor(
 
     var quads = new ArrayBuffer[Quad]()
 
-
     scala.util.control.Exception.ignoring(classOf[Exception]) {
       val page = engine.postprocess(pageId, source,new MyExpansionCallback(context.templates)).getPage
+
+      var linkExtract = new SwebleLinkExtractor()
+      linkExtract.go(page)
+      for (link <- linkExtract.internalLinks){
+          try
+          {
+            val destinationTitle = WikiTitle.parse(link, context.language)
+            if(destinationTitle.language != context.language && destinationTitle.namespace.code == 0) {
+              quads += interWikiQuad(subjectUri, destinationTitle.resourceIri, pageNode.sourceIri)
+              //println(destinationTitle)
+            }
+          }
+          catch { case _: Throwable  =>  }
+      }
+
       //new PrintWriter(pageNode.title.decoded + "_ast_expansion") { write(AstPrinter.print[WtNode](page)); close }
       var html = HtmlRenderer.print(new MyRendererCallback, config, pageTitle, page)
       html = StringEscapeUtils.unescapeXml(html)
@@ -129,6 +149,34 @@ class NifSwebleExtractor(
 
     quads
   }
+}
+
+import de.fau.cs.osr.ptk.common.AstVisitor
+import org.sweble.wikitext.parser.nodes.WtNode
+import org.sweble.wikitext.parser.nodes.WtExternalLink
+import org.sweble.wikitext.parser.nodes.WtInternalLink
+
+class SwebleLinkExtractor() extends AstVisitor[WtNode] {
+
+  val internalLinks = mutable.MutableList[String]()
+
+  def visit(n: WtNode): Unit = { // Fallback for all nodes that are not explicitly handled below
+    iterate(n)
+  }
+
+  /*
+  def visit(link: WtExternalLink): Unit = {
+    println(link)
+  } */
+
+  def visit(link: WtInternalLink): Unit = {
+    //var prefix = link.getPrefix
+    //var resolved = link.getTarget.isResolved
+    var target = link.getTarget.getAsString
+    internalLinks += target
+    //println(target)
+  }
+
 }
 
 final private class MyExpansionCallback(templates : Template) extends ExpansionCallback {

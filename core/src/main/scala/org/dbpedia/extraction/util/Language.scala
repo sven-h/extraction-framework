@@ -43,7 +43,8 @@ class Language private(
   val propertyUri: RdfNamespace,
   val baseUri: String,
   val apiUri: String,
-  val pages: Int
+  val pages: Int,
+  val interlang: String
 ) extends java.io.Serializable
 {
     val locale = new Locale(isoCode)
@@ -93,38 +94,38 @@ object Language extends (String => Language)
         val languages = new HashMap[String,Language]
         languages("mappings") = new Language("mappings", "Mappings", "en", "eng", "mappings.dbpedia.org", "http://mappings.dbpedia.org",
           new DBpediaNamespace("http://mappings.dbpedia.org/wiki/"), new DBpediaNamespace("http://mappings.dbpedia.org/wiki/"),
-          "http://mappings.dbpedia.org", "http://mappings.dbpedia.org/api.php", 0)
+          "http://mappings.dbpedia.org", "http://mappings.dbpedia.org/api.php", 0, "")
 
         languages("wikidata") = new Language("wikidata", "Wikidata", "en", "eng", "wikidata.dbpedia.org", "http://wikidata.dbpedia.org",
           new DBpediaNamespace("http://wikidata.dbpedia.org/resource/"), new DBpediaNamespace("http://wikidata.dbpedia.org/property/"),
-          "http://www.wikidata.org", "https://www.wikidata.org/w/api.php", 10000000)
+          "http://www.wikidata.org", "https://www.wikidata.org/w/api.php", 10000000, "")
 
         languages("commons") = new Language("commons", "Commons", "en", "eng", "commons.dbpedia.org", "http://commons.dbpedia.org",
           new DBpediaNamespace("http://commons.dbpedia.org/resource/"), new DBpediaNamespace("http://commons.dbpedia.org/property/"),
-          "http://commons.wikimedia.org", "https://commons.wikimedia.org/w/api.php", 10000000)
+          "http://commons.wikimedia.org", "https://commons.wikimedia.org/w/api.php", 10000000, "")
 
         languages("none") = new Language("none", "No Language", "en", "eng", "", "",
           new DBpediaNamespace(""), new DBpediaNamespace(""),
-          "", "", 0)
+          "", "", 0, "")
 
         languages("core") = new Language("core", "Core Directory", "en", "eng", "", "",
           new DBpediaNamespace(""), new DBpediaNamespace(""),
-          "", "", 0)
+          "", "", 0, "")
 
         languages("simple") = new Language("simple", "Simple English", "en", "eng", "", "",
           new DBpediaNamespace(""), new DBpediaNamespace(""),
-          "", "", 0)
+          "", "", 0, "")
 
         languages("sh") = new Language("sh", "Serbo-Croatian", "hbs", "hbs", "", "",
           new DBpediaNamespace(""), new DBpediaNamespace(""),
-          "", "", 0)
+          "", "", 0, "")
 
         //"mu","prefix","sh","simple",
 
         for(lang <- wikiLanguageCodes)
         {
           try {
-            languages(lang) = makeDbkwikLanguage(lang, "default", true)
+            languages(lang) = makeDbkwikLanguage(lang, "default", true, lang)
           }
           catch{
             case mre : MissingResourceException => logger.log(Level.WARNING, "Could not create the language: " + lang)
@@ -151,10 +152,9 @@ object Language extends (String => Language)
         return base
       }
 
-      def updateInterwikis(interwikis : scala.collection.Map[String, String]):Unit={
+      def updateInterwikis(interwikis : scala.collection.Map[String, String], interwikiLanguage : scala.collection.Map[String, String]):Unit={
         for ((prefix, url) <- interwikis) {
-          if(url.contains("fandom") || url.contains("wikia"))
-            map(prefix) = makeDbkwikLanguage(prefix,  preprocessWikiBase(url), false)
+          map(prefix) = makeDbkwikLanguage(prefix,  preprocessWikiBase(url), false, interwikiLanguage.getOrElse(prefix, ""))
         }
         English = map("en")
       }
@@ -165,7 +165,7 @@ object Language extends (String => Language)
         for(lang <- wikiLanguageCodes)
         {
           try {
-            map(lang) = makeDbkwikLanguage(lang, wikiBase, true)
+            map(lang) = makeDbkwikLanguage(lang, wikiBase, true, lang)
           }
           catch{
             case mre : MissingResourceException => logger.log(Level.WARNING, "Could not create the language: " + lang)
@@ -173,7 +173,7 @@ object Language extends (String => Language)
         }
         map("commons") = new Language("commons", "Commons", "en", "eng", "commons.dbpedia.org", "http://commons.dbpedia.org",
           new DBpediaNamespace("http://commons.dbpedia.org/resource/"), new DBpediaNamespace("http://commons.dbpedia.org/property/"),
-          "http://"+wikiBase, "http://"+wikiBase + "/api.php", 10000000)
+          "http://"+wikiBase, "http://"+wikiBase + "/api.php", 10000000, "")
 
         English = map("en")
         Commons = map("commons")
@@ -181,14 +181,19 @@ object Language extends (String => Language)
 
 
 
-      def makeDbkwikLanguage(language : String, wikiBase: String, modifyBase: Boolean): Language = {
+      def makeDbkwikLanguage(language : String, wikiBase: String, modifyBase: Boolean, isInterLanguage : String): Language = {
         var base = wikiBase
+        //https://community.fandom.com/wiki/Help:Language_code
         if(language.equals("en") == false && modifyBase){
           base = language + "." + base
         }
 
+        var baseDomain = "dbkwik.webdatacommons.org/" + base
 
-        val baseDomain = "dbkwik.webdatacommons.org/" + base
+        if(wikiBase == "en.wikipedia.org"){
+          base = "en.wikipedia.org"
+          baseDomain = "dbpedia.org"
+        }
 
         val loc = Locale.forLanguageTag(language)
 
@@ -208,7 +213,8 @@ object Language extends (String => Language)
           new DBpediaNamespace("http://" + baseDomain + "/property/"), //val propertyUri: RdfNamespace,
           "http://"+ base,               //val baseUri: String,
           "https://"+ base + "/api.php", //val apiUri: String,
-          0                                 //val pages: Int
+          0,                                 //val pages: Int
+          isInterLanguage
         )
       }
 

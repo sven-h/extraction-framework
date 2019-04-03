@@ -27623,6 +27623,16 @@ http://vocab.getty.edu/ulan/$1}}
 | comments =
 	{{comment|en|Reserved for DBpedia. {{Reserved for DBpedia}}}}
 | rdfs:subPropertyOf = dul:associatedWith
+}}</text></revision></page><page><title>OntologyProperty:WikiPageInterWikiLink</title><ns>202</ns><id>2432</id><revision><id>36658</id><timestamp>2014-07-08T14:26:25Z</timestamp><text>'''{{Reserved for DBpedia}}'''
+
+
+{{ObjectProperty
+| rdfs:label@en = Link from a Wikipage to another Wikipage in another wiki
+| rdfs:domain = owl:Thing
+| rdfs:range = owl:Thing
+| comments =
+	{{comment|en|Reserved for DBpedia. {{Reserved for DBpedia}}}}
+| rdfs:subPropertyOf = dul:associatedWith
 }}</text></revision></page><page><title>OntologyProperty:WikiPageWikiLinkText</title><ns>202</ns><id>10113</id><revision><id>37736</id><timestamp>2014-09-08T13:44:53Z</timestamp><text>'''{{Reserved for DBpedia}}'''
 
 

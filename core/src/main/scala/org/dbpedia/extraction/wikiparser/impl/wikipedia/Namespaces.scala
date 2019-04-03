@@ -324,6 +324,6 @@ object Namespaces
         (names.toMap, codes.toMap)
     }
 
-    def names(lang : Language) : Map[Int, String] = names.getOrElse(lang.wikiCode, names("en"))
-    def codes(lang : Language) : Map[String, Int] = codes.getOrElse(lang.wikiCode, codes("en"))
+    def names(lang : Language) : Map[Int, String] = names.getOrElse(lang.wikiCode, names("en"))//if(lang.baseUri.contains("wikia") || lang.baseUri.contains("fandom")) names("en") else throw new IllegalArgumentException("no namespace names found for language '"+lang.wikiCode+"'"))
+    def codes(lang : Language) : Map[String, Int] = codes.getOrElse(lang.wikiCode, codes("en"))//if(lang.baseUri.contains("wikia") || lang.baseUri.contains("fandom")) codes("en") else throw new IllegalArgumentException("no namespace codes found for language '"+lang.wikiCode+"'"))
 }

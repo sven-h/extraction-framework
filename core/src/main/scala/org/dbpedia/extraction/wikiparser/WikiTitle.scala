@@ -162,7 +162,7 @@ object WikiTitle
             for (lang <- Language.get(p0))
             {
               language = lang
-              isInterLanguageLink = ! leadingColon
+              isInterLanguageLink = lang.interlang.nonEmpty //! leadingColon
               parts = parts.tail
             }
           }
