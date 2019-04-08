@@ -7,7 +7,7 @@ import org.dbpedia.extraction.nif.Paragraph.HtmlString
 import org.dbpedia.extraction.ontology.RdfNamespace
 import org.dbpedia.extraction.transform.{Quad, QuadBuilder}
 import org.dbpedia.extraction.config.Config.NifParameters
-import org.dbpedia.extraction.util.{CssConfigurationMap, RecordSeverity}
+import org.dbpedia.extraction.util.{CssConfigurationMap, Language, RecordSeverity}
 import org.dbpedia.iri.UriUtils
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element, TextNode}
@@ -22,7 +22,7 @@ import scala.util.{Failure, Success, Try}
 /**
   * Created by Chile on 1/19/2017.
   */
-abstract class HtmlNifExtractor(nifContextIri: String, language: String, nifParameters : NifParameters) {
+abstract class HtmlNifExtractor(nifContextIri: String, language: String, nifParameters : NifParameters, fullLang: Language) {
 
   assert(nifContextIri.contains("?"), "the nifContextIri needs a query part!")
 
@@ -299,7 +299,7 @@ abstract class HtmlNifExtractor(nifContextIri: String, language: String, nifPara
       val element = new Element(Tag.valueOf("div"), "")
       pageSection.content.foreach(element.appendChild)
 
-      val extractor: LinkExtractor = new LinkExtractor(extractionContext)
+      val extractor: LinkExtractor = new LinkExtractor(extractionContext, this.fullLang)
       val traversor: NodeTraversor = new NodeTraversor(extractor)
       traversor.traverse(element)
       if (extractor.getParagraphs.size() > 0){

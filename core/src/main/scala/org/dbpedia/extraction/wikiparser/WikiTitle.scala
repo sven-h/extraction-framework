@@ -138,6 +138,14 @@ object WikiTitle
         // FIXME: use interwiki prefixes from WikiSettingsDownloader.scala, e.g. [[q:Foo]] links to wikiquotes
 
         var parts = decoded.split(":", -1)
+        if(decoded.startsWith("w:c:")){ //see https://community.fandom.com/wiki/Help:Interwiki_link
+          parts = decoded.substring(4).split(":", -1)
+          if (parts.length > 0){
+            parts(0) = "w:c:" + parts(0)
+          }
+        }
+
+
 
         var leadingColon = false
         var isInterLanguageLink = false

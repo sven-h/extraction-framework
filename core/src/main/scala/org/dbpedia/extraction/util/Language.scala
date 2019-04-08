@@ -5,6 +5,7 @@ import java.util.{Locale, MissingResourceException}
 
 import org.dbpedia.extraction.ontology.{DBpediaNamespace, RdfNamespace}
 
+import scala.collection.immutable.HashSet
 import scala.collection.mutable.Map
 import scala.collection.mutable.HashMap
 
@@ -70,7 +71,7 @@ object Language extends (String => Language)
       val wikipediaLanguageUrl = "https://noc.wikimedia.org/conf/langlist"
 
 
-      val wikiLanguageCodes = List("aa","ab","ace","ady","af","ak","als","am","an","ang","ar","arc","arz","as","ast","atj","av","ay","az","azb",
+      val wikiLanguageCodes = HashSet("aa","ab","ace","ady","af","ak","als","am","an","ang","ar","arc","arz","as","ast","atj","av","ay","az","azb",
         "ba","bar","bat-smg","bcl","be","be-tarask","bg","bh","bi","bjn","bm","bn","bo","bpy","br","bs","bug","bxr",
         "ca","cbk-zam","cdo","ce","ceb","ch","cho","chr","chy","ckb","co","cr","crh","cs","csb","cu","cv","cy",
         "da","de","din","diq","dsb","dty","dv","dz","ee","el","eml","en","eo","es","et","eu","ext",
@@ -252,16 +253,46 @@ object Language extends (String => Language)
    * Gets a language object for a Wikipedia language code.
    * Throws IllegalArgumentException if language code is unknown.
    */
-  def apply(code: String) : Language = map.getOrElse(code, throw new IllegalArgumentException("unknown language code "+code))
+  def apply(code: String) : Language = checkCodeForInterWikiLink(code) match {
+    case Some(x) => return x
+    case scala.None => map.getOrElse(code, throw new IllegalArgumentException("unknown language code "+code))
+  }
 
   /**
    * Gets a language object for a Wikipedia language code, or None if given code is unknown.
    */
-  def get(code: String) : Option[Language] = map.get(code)
+  def get(code: String) : Option[Language] = checkCodeForInterWikiLink(code) match {
+    case Some(x) => return Some(x)
+    case scala.None => map.get(code)
+  }
+
 
   /**
    * Gets a language object for a Wikipedia language code, or the default if the given code is unknown.
    */
-  def getOrElse(code: String, default: => Language) : Language = map.getOrElse(code, default)
+  def getOrElse(code: String, default: => Language) : Language = checkCodeForInterWikiLink(code) match {
+    case Some(x) => return x
+    case scala.None => map.getOrElse(code, default)
+  }
+
+
+
+
+  def checkCodeForInterWikiLink(code: String) : Option[Language] = {
+    if(code.startsWith("w:c:")){
+      var base = code.substring(4)
+      var splits = base.split("\\.")
+      var language = "en"
+      if(splits.length > 1){
+        if(wikiLanguageCodes.contains(splits(0))){
+          language = splits(0)
+        }
+      }
+      base = base + ".wikia.com"
+      return Some(makeDbkwikLanguage(language, base, false, ""))
+    }
+    return scala.None
+  }
+
 
 }

@@ -26,6 +26,7 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.language.reflectiveCalls
+import scala.util.matching.Regex
 
 /**
   * Extracts page html.
@@ -52,6 +53,8 @@ class NifSwebleExtractor(
   var config: WikiConfig = getSwebleConfig()
   var engine = new WtEngineImpl(config)
   //var textConverter =
+
+  protected val removeThumbLinks: Regex = "(\\[\\[.*)\\|thumb([\\|]?.*\\]\\])".r
 
   protected val shortAbstractLength: Int = context.configFile.abstractParameters.shortAbstractMinLength
 
@@ -104,7 +107,8 @@ class NifSwebleExtractor(
     val pageTitle = PageTitle.make(config, pageNode.title.decodedWithNamespace)
     val pageId = new PageId(pageTitle, pageNode.id)
 
-    val source = StringEscapeUtils.unescapeXml(pageNode.source)
+    var source = StringEscapeUtils.unescapeXml(pageNode.source)
+    source = removeThumbLinks.replaceAllIn(source, "")//"$1$2") //replace all links with thumb
 
     var quads = new ArrayBuffer[Quad]()
 
@@ -117,8 +121,13 @@ class NifSwebleExtractor(
           try
           {
             val destinationTitle = WikiTitle.parse(link, context.language)
-            if(destinationTitle.language != context.language && destinationTitle.namespace.code == 0) {
-              quads += interWikiQuad(subjectUri, destinationTitle.resourceIri, pageNode.sourceIri)
+            if(destinationTitle.language != context.language && destinationTitle.namespace.code == 0 ) {
+              if(destinationTitle.fragment == null){
+                quads += interWikiQuad(subjectUri, destinationTitle.resourceIri, pageNode.sourceIri)
+              }else{
+                quads += interWikiQuad(subjectUri, destinationTitle.resourceIri + "#" + destinationTitle.fragment, pageNode.sourceIri)
+              }
+
               //println(destinationTitle)
             }
           }

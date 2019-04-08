@@ -28,7 +28,8 @@ class WikipediaNifExtractor(
    ) extends HtmlNifExtractor(
       wikiPage.uri + "?dbpv=" + context.configFile.dbPediaVersion + "&nif=context",
       context.language.isoCode,
-      context.configFile.nifParameters
+      context.configFile.nifParameters,
+      context.language
   ) {
 
   /**
