@@ -47,21 +47,21 @@ class ArticleTemplatesClassExtractor(
       val indexInfoBox = titleLower.indexOf("infobox")
 
       if(indexInfoBox != -1){
+        //var title = template.title.encoded
         //before or after: blabla_infobox or infoboxblabnla
-        var charactersBefore = indexInfoBox
-        var charactersAfter = titleLower.length - (indexInfoBox + 7)
-        var title = template.title.encoded
-        if(charactersBefore > charactersAfter){
-          title = title.substring(0, indexInfoBox)
-        }
-        else{
-          title = title.substring(indexInfoBox + 7, title.length)
-        }
-        title = stripAll(title, " _-")
-        if(title.nonEmpty) {
-          //lowercase uri:
-          title = title.toLowerCase
-          var classUri = context.language.dbpediaUri + "/class/" + title
+        //var charactersBefore = indexInfoBox
+        //var charactersAfter = titleLower.length - (indexInfoBox + 7)
+        //if(charactersBefore > charactersAfter){
+        //  title = title.substring(0, indexInfoBox)
+        //}
+        //else{
+        //  title = title.substring(indexInfoBox + 7, title.length)
+        //}
+        titleLower = titleLower.replaceAll("infobox", "")
+        titleLower = titleLower.replace("/", "")
+        titleLower = stripAll(titleLower, " _-")
+        if(titleLower.nonEmpty) {
+          var classUri = context.language.dbpediaUri + "/class/" + titleLower
           //println(titleLower)
           hasType = true
           quads += new Quad(context.language, DBpediaDatasets.InfoboxTemplateType, subjectUri, typeProperty, classUri, node.sourceIri)

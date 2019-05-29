@@ -1,5 +1,6 @@
 package org.dbpedia.extraction.util
 
+import java.net.MalformedURLException
 import java.util.logging.{Level, Logger}
 import java.util.{Locale, MissingResourceException}
 
@@ -138,7 +139,12 @@ object Language extends (String => Language)
 
       def preprocessWikiBase(wikiBase: String): String ={
         //return new java.net.URI(wikiBase).getScheme()
-        return wikiBase.stripPrefix("http://").stripPrefix("https://").stripSuffix("/$1").stripSuffix("/wiki")
+        try {
+          return new java.net.URL(wikiBase).getHost
+        } catch {
+          case test: MalformedURLException => return wikiBase.stripPrefix("http://").stripPrefix("https://").stripSuffix("/$1").stripSuffix("/wiki")
+        }
+        //return wikiBase.stripPrefix("http://").stripPrefix("https://").stripSuffix("/$1").stripSuffix("/wiki")
       }
 
       def getLanguageFreeWikiBase(wikiBase: String): String ={
@@ -191,9 +197,16 @@ object Language extends (String => Language)
 
         var baseDomain = "dbkwik.webdatacommons.org/" + base
 
-        if(wikiBase == "en.wikipedia.org"){
-          base = "en.wikipedia.org"
-          baseDomain = "dbpedia.org"
+        //static mapping for dbpedia
+        if(wikiBase.endsWith("wikipedia.org")){
+          var wikipediaLang = wikiBase.substring(0, wikiBase.indexOf("."))
+          if(wikipediaLang == "en"){
+            base = "en.wikipedia.org"
+            baseDomain = "dbpedia.org"
+          }else{
+            base = wikipediaLang + ".wikipedia.org"
+            baseDomain = wikipediaLang + ".dbpedia.org"
+          }
         }
 
         val loc = Locale.forLanguageTag(language)

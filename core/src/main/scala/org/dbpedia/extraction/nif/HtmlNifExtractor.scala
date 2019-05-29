@@ -7,7 +7,7 @@ import org.dbpedia.extraction.nif.Paragraph.HtmlString
 import org.dbpedia.extraction.ontology.RdfNamespace
 import org.dbpedia.extraction.transform.{Quad, QuadBuilder}
 import org.dbpedia.extraction.config.Config.NifParameters
-import org.dbpedia.extraction.util.{CssConfigurationMap, Language, RecordSeverity}
+import org.dbpedia.extraction.util.{CssConfigurationMap, RecordSeverity}
 import org.dbpedia.iri.UriUtils
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element, TextNode}
@@ -22,7 +22,7 @@ import scala.util.{Failure, Success, Try}
 /**
   * Created by Chile on 1/19/2017.
   */
-abstract class HtmlNifExtractor(nifContextIri: String, language: String, nifParameters : NifParameters, fullLang: Language) {
+abstract class HtmlNifExtractor(nifContextIri: String, language: String, nifParameters : NifParameters) {
 
   assert(nifContextIri.contains("?"), "the nifContextIri needs a query part!")
 
@@ -282,9 +282,13 @@ abstract class HtmlNifExtractor(nifContextIri: String, language: String, nifPara
         words += nifLinks(word, RdfNamespace.NIF.append("beginIndex"), (offset + link.getWordStart).toString, sourceUrl, RdfNamespace.XSD.append("nonNegativeInteger"))
         words += nifLinks(word, RdfNamespace.NIF.append("endIndex"), (offset + link.getWordEnd).toString, sourceUrl, RdfNamespace.XSD.append("nonNegativeInteger"))
         words += nifLinks(word, RdfNamespace.NIF.append("superString"), paragraphUri, sourceUrl, null)
-        UriUtils.createURI(link.getUri) match{
-          case Success(s) => words += nifLinks(word, "http://www.w3.org/2005/11/its/rdf#taIdentRef", s.toString, sourceUrl, null)  //TODO IRI's might throw exception in org.dbpedia.extraction.destinations.formatters please check this
-          case Failure(f) =>
+        if(link.getUri.contains("#")){
+          words += nifLinks(word, "http://www.w3.org/2005/11/its/rdf#taIdentRef", link.getUri.toString, sourceUrl, null)
+        }else{
+          UriUtils.createURI(link.getUri) match{
+            case Success(s) => words += nifLinks(word, "http://www.w3.org/2005/11/its/rdf#taIdentRef", s.toString, sourceUrl, null)  //TODO IRI's might throw exception in org.dbpedia.extraction.destinations.formatters please check this
+            case Failure(f) =>
+          }
         }
         if(writeLinkAnchors)
           words += nifLinks(word, RdfNamespace.NIF.append("anchorOf"), link.getLinkText, sourceUrl, RdfNamespace.XSD.append("string"))
@@ -299,7 +303,7 @@ abstract class HtmlNifExtractor(nifContextIri: String, language: String, nifPara
       val element = new Element(Tag.valueOf("div"), "")
       pageSection.content.foreach(element.appendChild)
 
-      val extractor: LinkExtractor = new LinkExtractor(extractionContext, this.fullLang)
+      val extractor: LinkExtractor = new LinkExtractor(extractionContext)
       val traversor: NodeTraversor = new NodeTraversor(extractor)
       traversor.traverse(element)
       if (extractor.getParagraphs.size() > 0){

@@ -2,14 +2,16 @@ package org.dbpedia.extraction.mappings
 
 import de.fau.cs.osr.ptk.common.AstPrinter
 import java.io.PrintWriter
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 import org.dbpedia.extraction.annotations.ExtractorAnnotation
 import org.dbpedia.extraction.config.Config
 import org.dbpedia.extraction.config.provenance.DBpediaDatasets
-import org.dbpedia.extraction.nif.{TextConvert, WikipediaNifExtractor}
+import org.dbpedia.extraction.nif.{NifExtractionAstVisitor, TextConvert, WikipediaNifExtractor}
 import org.dbpedia.extraction.ontology.{Ontology, OntologyProperty}
 import org.dbpedia.extraction.transform.{Quad, QuadBuilder}
-import org.dbpedia.extraction.util.{Language, WikiSettings}
+import org.dbpedia.extraction.util.{ExtractorUtils, Language, WikiSettings}
 import org.dbpedia.extraction.wikiparser._
 import org.sweble.wikitext.engine._
 import org.sweble.wikitext.engine.config.{I18nAliasImpl, InterwikiImpl, WikiConfig, WikiConfigImpl}
@@ -18,7 +20,7 @@ import org.sweble.wikitext.engine.output.HtmlRenderer
 import org.sweble.wikitext.engine.output.HtmlRendererCallback
 import org.sweble.wikitext.engine.output.MediaInfo
 import org.sweble.wikitext.engine.utils.UrlEncoding
-import org.sweble.wikitext.parser.nodes.{WtNode, WtUrl}
+import org.sweble.wikitext.parser.nodes.{WtNode, WtSection, WtUrl}
 import org.apache.commons.lang3.StringEscapeUtils
 import org.sweble.wikitext.engine.nodes.{EngPage, EngProcessedPage}
 
@@ -48,7 +50,7 @@ class NifSwebleExtractor(
                   )
   extends WikiPageExtractor
 {
-  override val datasets = Set(DBpediaDatasets.NifContext,DBpediaDatasets.NifPageStructure,DBpediaDatasets.NifTextLinks,DBpediaDatasets.LongAbstracts, DBpediaDatasets.ShortAbstracts, DBpediaDatasets.RawTables, DBpediaDatasets.Equations, DBpediaDatasets.InterWikiLinks)
+  override val datasets = Set(DBpediaDatasets.NifContext,DBpediaDatasets.NifPageStructure,DBpediaDatasets.NifTextLinks,DBpediaDatasets.LongAbstracts, DBpediaDatasets.ShortAbstracts, DBpediaDatasets.RawTables, DBpediaDatasets.Equations, DBpediaDatasets.InterWikiLinks, DBpediaDatasets.ExternalLinks, DBpediaDatasets.InfoboxTest)
 
   var config: WikiConfig = getSwebleConfig()
   var engine = new WtEngineImpl(config)
@@ -63,6 +65,11 @@ class NifSwebleExtractor(
 
   val wikiPageWikiLinkProperty = context.ontology.properties("wikiPageInterWikiLink")
   private val interWikiQuad = QuadBuilder.apply(context.language, DBpediaDatasets.InterWikiLinks, wikiPageWikiLinkProperty, null) _
+
+  private val sameAsProperty = context.ontology.properties("owl:sameAs")
+  private val quadInterLang = QuadBuilder.apply(context.language, DBpediaDatasets.InterLanguageLinks, sameAsProperty, null) _
+
+  val wikiPageExternalLinkProperty = context.ontology.properties("wikiPageExternalLink")
 
   def getSwebleConfig(): WikiConfig = {
     //https://github.com/sweble/sweble-wikitext/blob/develop/sweble-wikitext-components-parent/swc-engine/src/main/java/org/sweble/wikitext/engine/utils/LanguageConfigGenerator.java
@@ -95,6 +102,37 @@ class NifSwebleExtractor(
     builder.toString()
   }
 
+  def extractInternalLinks(pageNode : WikiPage, subjectUri : String, links: Seq[String]): Seq[Quad] = {
+    var quads = new ArrayBuffer[Quad]()
+    for (link <- links){
+      try
+      {
+        val destinationTitle = WikiTitle.parse(link, context.language)
+        if(destinationTitle.isInterLanguageLink){
+          quads += quadInterLang(subjectUri, destinationTitle.language.resourceUri.append(destinationTitle.decodedWithNamespace), pageNode.sourceIri)
+        }else {
+          if (destinationTitle.language.dbpediaUri != context.language.dbpediaUri && destinationTitle.namespace.code == 0) {
+            if (destinationTitle.fragment == null) {
+              quads += interWikiQuad(subjectUri, destinationTitle.resourceIri, pageNode.sourceIri)
+            } else {
+              quads += interWikiQuad(subjectUri, destinationTitle.resourceIri + "#" + destinationTitle.fragment, pageNode.sourceIri)
+            }
+          }
+        }
+      }
+      catch { case _: Throwable  =>  }
+    }
+    quads
+  }
+
+  def extractExternalLinks(pageNode: WikiPage, subjectUri: String, links: Seq[String]): Seq[Quad] = {
+    var quads = new ArrayBuffer[Quad]()
+    for (link <- links){
+        quads += new Quad(context.language, DBpediaDatasets.ExternalLinks, subjectUri, wikiPageExternalLinkProperty, link, pageNode.sourceIri, null)
+    }
+    quads
+  }
+
   override def extract(pageNode : WikiPage, subjectUri : String): Seq[Quad] =
   {
     //Only extract abstracts for pages from the Main namespace
@@ -115,27 +153,13 @@ class NifSwebleExtractor(
     scala.util.control.Exception.ignoring(classOf[Exception]) {
       val page = engine.postprocess(pageId, source,new MyExpansionCallback(context.templates)).getPage
 
-      var linkExtract = new SwebleLinkExtractor()
+      val linkExtract = new SwebleLinkExtractor()
       linkExtract.go(page)
-      for (link <- linkExtract.internalLinks){
-          try
-          {
-            val destinationTitle = WikiTitle.parse(link, context.language)
-            if(destinationTitle.language != context.language && destinationTitle.namespace.code == 0 ) {
-              if(destinationTitle.fragment == null){
-                quads += interWikiQuad(subjectUri, destinationTitle.resourceIri, pageNode.sourceIri)
-              }else{
-                quads += interWikiQuad(subjectUri, destinationTitle.resourceIri + "#" + destinationTitle.fragment, pageNode.sourceIri)
-              }
+      quads ++= extractInternalLinks(pageNode, subjectUri, linkExtract.internalLinks)
+      quads ++= extractExternalLinks(pageNode, subjectUri, linkExtract.externalLinks)
 
-              //println(destinationTitle)
-            }
-          }
-          catch { case _: Throwable  =>  }
-      }
-
-      //new PrintWriter(pageNode.title.decoded + "_ast_expansion") { write(AstPrinter.print[WtNode](page)); close }
-      var html = HtmlRenderer.print(new MyRendererCallback, config, pageTitle, page)
+      //new PrintWriter(URLEncoder.encode(pageNode.title.encoded + "_ast_expansion", StandardCharsets.UTF_8.toString)) { write(AstPrinter.print[WtNode](page)); close }
+      var html = HtmlRenderer.print(new MyRendererCallback(context.language), config, pageTitle, page)
       html = StringEscapeUtils.unescapeXml(html)
       //parser currently do not remove magic words:
       html = html.replaceAll("__.*?__", "")
@@ -168,15 +192,23 @@ import org.sweble.wikitext.parser.nodes.WtInternalLink
 class SwebleLinkExtractor() extends AstVisitor[WtNode] {
 
   val internalLinks = mutable.MutableList[String]()
+  val externalLinks = mutable.MutableList[String]()
 
   def visit(n: WtNode): Unit = { // Fallback for all nodes that are not explicitly handled below
     iterate(n)
   }
 
-  /*
+
   def visit(link: WtExternalLink): Unit = {
-    println(link)
-  } */
+    var target = link.getTarget
+    if (target.getProtocol eq "")
+      externalLinks += target.getPath
+    else
+      externalLinks += target.getProtocol + ":" + target.getPath
+    //println(link.getTarget)
+    //println(link.getTarget.getPath)
+    //println(link.getTitle)
+  }
 
   def visit(link: WtInternalLink): Unit = {
     //var prefix = link.getPrefix
@@ -185,7 +217,13 @@ class SwebleLinkExtractor() extends AstVisitor[WtNode] {
     internalLinks += target
     //println(target)
   }
-
+  /*
+  def visit(s: WtSection): Unit = {
+    //var test = s.getHeading.toString()
+    //println(test)
+    dispatch(s.getBody)
+  }
+  */
 }
 
 final private class MyExpansionCallback(templates : Template) extends ExpansionCallback {
@@ -193,15 +231,27 @@ final private class MyExpansionCallback(templates : Template) extends ExpansionC
   override def fileUrl(pageTitle: PageTitle, width: Int, height: Int): String = ""
 }
 
-final private class MyRendererCallback extends HtmlRendererCallback {
+final private class MyRendererCallback(val lang: Language) extends HtmlRendererCallback {
+
   override def resourceExists(target: PageTitle): Boolean = true
   override def getMediaInfo(title: String, width: Int, height: Int): MediaInfo = null
   override def makeUrl(target: PageTitle): String = {
-    val page = UrlEncoding.WIKI.encode(target.getNormalizedFullTitle)
-    val f = target.getFragment
-    var url = page
-    if (f != null && !f.isEmpty) url = page + "#" + UrlEncoding.WIKI.encode(f)
-    "/mediawiki/" + url
+    var page = target.getDenormalizedFullTitle
+    if(target.getFragment != null)
+      page = page + "#" + target.getFragment
+    try {
+      val myTitle = WikiTitle.parse(page, lang)
+      if(myTitle.fragment == null)
+        return myTitle.resourceIri
+      else
+        return myTitle.resourceIri + "#" + myTitle.fragment
+    }catch{
+      case e:Exception => return lang.resourceUri.append(page)
+    }
+    //val f = target.getFragment
+    //var url = page
+    //if (f != null && !f.isEmpty) url = page + "#" + UrlEncoding.WIKI.encode(f)
+    //"/mediawiki/" + url
   }
   override def makeUrl(target: WtUrl): String = {
     if (target.getProtocol eq "") return target.getPath

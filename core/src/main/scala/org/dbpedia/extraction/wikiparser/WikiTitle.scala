@@ -143,6 +143,9 @@ object WikiTitle
           if (parts.length > 0){
             parts(0) = "w:c:" + parts(0)
           }
+          if(parts.length == 1){
+            parts = Array(parts(0), "")
+          }
         }
 
 

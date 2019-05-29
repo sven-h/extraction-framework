@@ -1,8 +1,6 @@
 package org.dbpedia.extraction.nif;
 
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.dbpedia.extraction.util.Language;
-import org.dbpedia.extraction.wikiparser.WikiTitle;
 import org.dbpedia.iri.UriUtils;
 import org.jsoup.nodes.Node;
 import org.jsoup.select.NodeVisitor;
@@ -23,12 +21,10 @@ public class LinkExtractor implements NodeVisitor {
 	private boolean invisible = false;
     private NifExtractorContext context;
 	private ArrayList<String> errors = new ArrayList<>();
-	private Language fullLang;
-	
-	public LinkExtractor(NifExtractorContext context, Language fullLang) {
+
+	public LinkExtractor(NifExtractorContext context) {
         paragraphs = new ArrayList<Paragraph>();
 		this.context = context;
-		this.fullLang = fullLang;
 	}
 	
 	/**
@@ -81,19 +77,16 @@ public class LinkExtractor implements NodeVisitor {
 		} else if(node.nodeName().equals("a")) {
             String link = node.attr("href");
             //remove internal links linking to mediawiki meta pages. Also removes links that contain ":".
-            if (link.contains("mediawiki")) {
-                tempLink = new Link();
-                String uri = cleanLink(node.attr("href"), false);
-                setUri(uri);
-            } else if (node.attr("class").equals("external text")) {
+            if (node.attr("class").equals("external text")) {
                 //don't skip external links
                 tempLink = new Link();
                 String uri = cleanLink(node.attr("href"), true);
                 setUri(uri);
-
-            } else {
-                skipLevel = depth;
-            }
+            }else{
+				tempLink = new Link();
+				String uri = node.attr("href");
+				setUri(uri);
+			}
         } else if(node.nodeName().equals("p")) {
             if(paragraph != null) {
                 addParagraph("p");
@@ -135,17 +128,8 @@ public class LinkExtractor implements NodeVisitor {
 	private String cleanLink(String uri, boolean external) {
 		if(!external) {
 
-            uri = uri.replace("&action=edit&redlink=1", "");
-            WikiTitle destinationTitle = WikiTitle.parse(uri.substring(uri.indexOf("mediawiki/")+10), this.fullLang);
-
-            if(destinationTitle.fragment() == null){
-                return destinationTitle.resourceIri();
-            }else{
-                return destinationTitle.resourceIri() + "#" + destinationTitle.fragment();
-            }
-
-			//uri = this.context.resource.substring(0, this.context.resource.indexOf("/resource/") + 10) + uri.substring(uri.indexOf("mediawiki/")+10);
-			//uri = uri.replace("&action=edit&redlink=1", "");
+			uri = this.context.resource.substring(0, this.context.resource.indexOf("/resource/") + 10) + uri.substring(uri.indexOf("mediawiki/")+10);
+			uri = uri.replace("&action=edit&redlink=1", "");
 			
 		} else {
 			//there are links that contain illegal hostnames
