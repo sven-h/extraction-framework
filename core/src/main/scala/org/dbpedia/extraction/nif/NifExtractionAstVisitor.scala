@@ -17,7 +17,7 @@ class NifExtractionAstVisitor(language : Language)
   private var currentSection = new ListBuffer[Int]()
 
   private var context = StringBuilder.newBuilder //contains the whole text of the wikipage
-  private var nifSection: NifSection = new NifSection(id = "abstract",ref = "", prev = None, next = None, top = None, sub = None, begin = Some(0), end = None, paragraphs = ListBuffer())
+  private var nifSection: NifSection = new NifSection(id = "abstract",ref = "", prev = None, next = None, top = None, sub = None, begin = Some(0), end = None, beginTitle = None, endTitle = None, paragraphs = ListBuffer())
   private var nifParagraph: NifParagraph = new NifParagraph(begin = Some(0), end = None,links = ListBuffer())
   private var extLinkNum :Int = 1
 
@@ -42,6 +42,8 @@ class NifExtractionAstVisitor(language : Language)
       sub = None,
       begin = Some(0),
       end = None,
+      beginTitle = None,
+      endTitle = None,
       paragraphs = ListBuffer()
     )
     nifSection = abstractSection
@@ -256,6 +258,8 @@ class NifExtractionAstVisitor(language : Language)
       sub = None,
       begin = None,
       end = None,
+      beginTitle = None,
+      endTitle = None,
       paragraphs = ListBuffer()
     )
     section.top match{
@@ -282,10 +286,10 @@ class NifExtractionAstVisitor(language : Language)
       tocMap.append(nifSection)
       //closeParagraphAndStartNew()
       nifParagraph = new NifParagraph(begin = Some(0),end = Some(0),links = ListBuffer()) //dummy paragraph (all lnks in header will be put in dummy)
-      val startHeading = context.length
+      nifSection.beginTitle = Some(context.length)
       iterate(s.getHeading)
-      val endHeading = context.length
-      nifSection.id = context.substring(startHeading, endHeading)
+      nifSection.endTitle = Some(context.length)
+      nifSection.id = context.substring(nifSection.beginTitle.get, nifSection.endTitle.get)
 
       closeParagraphAndStartNew()
     }

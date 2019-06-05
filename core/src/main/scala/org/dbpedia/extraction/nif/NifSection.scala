@@ -11,6 +11,8 @@ class NifSection(
                   var sub: Option[NifSection],
                   var begin: Option[Int],
                   var end: Option[Int],
+                  var beginTitle: Option[Int],
+                  var endTitle: Option[Int],
                   var paragraphs: ListBuffer[NifParagraph]
                 ) {
   def addParagraph(nifparagraph: NifParagraph): Unit = paragraphs += nifparagraph

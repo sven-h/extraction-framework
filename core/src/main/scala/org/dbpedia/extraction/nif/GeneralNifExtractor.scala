@@ -36,6 +36,7 @@ class GeneralNifExtractor (
   val wikiPageExternalLinkProperty = context.ontology.properties("wikiPageExternalLink")
   val wikiPageInterWikiLinkProperty = context.ontology.properties("wikiPageInterWikiLink")
   val wikiPageInterLanguageLinkProperty = context.ontology.properties("wikiPageInterLanguageLink")
+  val labelProperty = context.ontology.properties("rdfs:label")
 
 
 
@@ -69,7 +70,7 @@ class GeneralNifExtractor (
   private def writeLongAndShortAbstract(section: NifSection, text:String):ArrayBuffer[Quad] = {
     var quads = ArrayBuffer[Quad]()
     if (recordAbstracts && section.id == "abstract" && text.length > 0) {
-      val describingParagraphs = getParagraphsDescribingConcept(section, text)
+      val describingParagraphs = section.paragraphs//getParagraphsDescribingConcept(section, text)
       if(describingParagraphs.size > 0){
         quads += longQuad(wikiPage.uri, text.substring(describingParagraphs.head.begin.getOrElse(0), describingParagraphs.last.end.getOrElse(0)), sourceUrl) //text.substring(section.begin.getOrElse(0), section.end.getOrElse(0)), sourceUrl)
         quads += shortQuad(wikiPage.uri, getShortAbstract(describingParagraphs, text), sourceUrl) // getShortAbstract(section.paragraphs, text), sourceUrl)
@@ -183,6 +184,21 @@ class GeneralNifExtractor (
       quads += nifStructure(topSectionUri, RdfNamespace.NIF.append("firstSection"), sectionUri, sourceUrl, null)
     if (section.next.isEmpty)
       quads += nifStructure(topSectionUri, RdfNamespace.NIF.append("lastSection"), sectionUri, sourceUrl, null)
+
+    //adding title
+    if(section.beginTitle.nonEmpty && section.endTitle.nonEmpty){
+      val titleUri = getNifIri("title", section.beginTitle.get, section.endTitle.get)
+      quads += nifStructure(titleUri, RdfNamespace.RDF.append("type"), RdfNamespace.NIF.append("Title"), sourceUrl, null)
+      quads += nifStructure(titleUri, RdfNamespace.NIF.append("referenceContext"), nifContextUri, sourceUrl, null)
+      quads += nifStructure(titleUri, RdfNamespace.NIF.append("beginIndex"), section.beginTitle.get.toString, sourceUrl, RdfNamespace.XSD.append("nonNegativeInteger"))
+      quads += nifStructure(titleUri, RdfNamespace.NIF.append("endIndex"), section.endTitle.get.toString, sourceUrl, RdfNamespace.XSD.append("nonNegativeInteger"))
+      quads += nifStructure(titleUri, RdfNamespace.NIF.append("superString"), sectionUri, sourceUrl, null)
+      if(writeLinkAnchors){
+        quads += nifStructure(titleUri, RdfNamespace.NIF.append("anchorOf"), section.id, sourceUrl, RdfNamespace.XSD.append("string"))
+        quads += nifStructure(sectionUri, labelProperty.uri, section.id.trim, sourceUrl, RdfNamespace.XSD.append("string"))
+      }
+
+    }
 
     quads
   }
