@@ -36,8 +36,8 @@ class ArticleTemplatesClassExtractor(
     //Only extract for pages from the Main namespace
     if(node.title.namespace != Namespace.Main) return Seq.empty
 
-    //Don't extract from redirect and disambiguation pages
-    if(node.isRedirect || node.isDisambiguation) return Seq.empty
+    //Don't extract from redirect
+    if(node.isRedirect) return Seq.empty
 
     var quads = new ArrayBuffer[Quad]()
     var hasType = false

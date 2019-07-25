@@ -43,7 +43,7 @@ extends WikiPageExtractor
 
     quads += new Quad(context.language, DBpediaDatasets.Labels, subjectUri, altLabelProperty, label, page.sourceIri, context.ontology.datatypes("rdf:langString"))
 
-    if(!page.isRedirect && !page.isDisambiguation)
+    if(!page.isRedirect)
       quads += new Quad(context.language, DBpediaDatasets.Labels, subjectUri, labelProperty, label, page.sourceIri, context.ontology.datatypes("rdf:langString"))
 
     quads
