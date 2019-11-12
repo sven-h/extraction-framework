@@ -3,12 +3,14 @@ package org.dbpedia.extraction.nif
 import util.control.Breaks._
 import org.dbpedia.extraction.config.Config
 import org.dbpedia.extraction.config.provenance.DBpediaDatasets
-import org.dbpedia.extraction.ontology.{Ontology, OntologyProperty, RdfNamespace}
+import org.dbpedia.extraction.hearst.ExtractHearstPatterns
+import org.dbpedia.extraction.ontology.{DBpediaNamespace, Ontology, OntologyProperty, RdfNamespace}
 import org.dbpedia.extraction.transform.{Quad, QuadBuilder}
 import org.dbpedia.extraction.util.Language
 import org.dbpedia.extraction.wikiparser.WikiPage
 import org.dbpedia.iri.UriUtils
 
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.util.{Failure, Success}
 import scala.language.reflectiveCalls
@@ -29,8 +31,6 @@ class GeneralNifExtractor (
 
   private val nifContextUri = wikiPage.uri + "?dbpv=" + context.configFile.dbPediaVersion + "&nif=context"
   private val sourceUrl = wikiPage.sourceIri
-  private val nifcontext = "http://dbkwik.webdatacommons.org/ontology/nifcontext"
-  private val ontologyLink = "http://dbkwik.webdatacommons.org/ontology/"
 
   val wikiPageWikiLinkProperty = context.ontology.properties("wikiPageWikiLink")
   val wikiPageExternalLinkProperty = context.ontology.properties("wikiPageExternalLink")
@@ -38,7 +38,10 @@ class GeneralNifExtractor (
   val wikiPageInterLanguageLinkProperty = context.ontology.properties("wikiPageInterLanguageLink")
   val labelProperty = context.ontology.properties("rdfs:label")
 
-
+  val hasTypePreModifier = DBpediaNamespace.ONTOLOGY.append("hasTypePreModifier")
+  val hasTypeHead = DBpediaNamespace.ONTOLOGY.append("hasTypeHead")
+  val hasTypePostModifier = DBpediaNamespace.ONTOLOGY.append("hasTypePostModifier")
+  val hasType = DBpediaNamespace.ONTOLOGY.append("hasType")
 
 
   protected lazy val nifContext: (String, String, String, String, String) => Quad = QuadBuilder.dynamicPredicate(context.language.isoCode,DBpediaDatasets.NifContext.encoded) _
@@ -73,8 +76,25 @@ class GeneralNifExtractor (
       val describingParagraphs = section.paragraphs//getParagraphsDescribingConcept(section, text)
       if(describingParagraphs.size > 0){
         quads += longQuad(wikiPage.uri, text.substring(describingParagraphs.head.begin.getOrElse(0), describingParagraphs.last.end.getOrElse(0)), sourceUrl) //text.substring(section.begin.getOrElse(0), section.end.getOrElse(0)), sourceUrl)
-        quads += shortQuad(wikiPage.uri, getShortAbstract(describingParagraphs, text), sourceUrl) // getShortAbstract(section.paragraphs, text), sourceUrl)
+        val shortAbstract = getShortAbstract(describingParagraphs, text)
+        quads += shortQuad(wikiPage.uri, shortAbstract, sourceUrl) // getShortAbstract(section.paragraphs, text), sourceUrl)
+        quads ++= extractHearstPattern(wikiPage.uri, shortAbstract, wikiPage.title.decoded)
       }
+    }
+    quads
+  }
+
+  private def extractHearstPattern(subject:String, text:String, title:String): ArrayBuffer[Quad] = {
+    var quads = ArrayBuffer[Quad]()
+    val np = ExtractHearstPatterns.extract(text, title)
+    if (np != null) {
+     if(!np.getPreModifierText.isEmpty)
+        quads += new Quad(context.language, DBpediaDatasets.HearstPatterns, subject, hasTypePreModifier, np.getPreModifierText, wikiPage.sourceIri, context.ontology.datatypes("rdf:langString"))
+      quads += new Quad(context.language, DBpediaDatasets.HearstPatterns, subject, hasTypeHead, np.getNPCoreText(), wikiPage.sourceIri, context.ontology.datatypes("rdf:langString"))
+      if(!np.getPostModifierText.isEmpty)
+        quads += new Quad(context.language, DBpediaDatasets.HearstPatterns, subject, hasTypePostModifier, np.getPostModifierText, wikiPage.sourceIri, context.ontology.datatypes("rdf:langString"))
+
+      quads += new Quad(context.language, DBpediaDatasets.HearstPatterns, subject, hasType, np.toString, wikiPage.sourceIri, context.ontology.datatypes("rdf:langString"))
     }
     quads
   }
@@ -148,7 +168,7 @@ class GeneralNifExtractor (
     quads += nifContext(nifContextUri, RdfNamespace.NIF.append("sourceUrl"), sourceUrl, sourceUrl, null)
     quads += nifContext(nifContextUri, RdfNamespace.NIF.append("isString"), text.toString(), sourceUrl, RdfNamespace.XSD.append("string"))
     quads += nifContext(nifContextUri, RdfNamespace.NIF.append("predLang"), "http://lexvo.org/id/iso639-3/" + context.language.iso639_3, sourceUrl, null)
-    quads += nifContext(wikiPage.uri, nifcontext, nifContextUri, sourceUrl, null) //link between resource and nif context
+    quads += nifContext(wikiPage.uri, DBpediaNamespace.ONTOLOGY.append("nifcontext"), nifContextUri, sourceUrl, null) //link between resource and nif context
     quads
   }
 
@@ -232,6 +252,22 @@ class GeneralNifExtractor (
       quads ++= writeLinks(paragraphObject, paragraph, text)
       lastParagraph = Some(paragraph)
     }
+    //write links only occuring in links section:
+    if(section.id.contains("link")){ //english: link, german link, spanish: enlace, french: lien
+      val links = mutable.Map[String, mutable.HashSet[NifLink]]()
+      for (paragraphObject <- section.paragraphs) {
+        for (link <- paragraphObject.links) {
+          if(link.begin.nonEmpty && link.end.nonEmpty && link.linkType == NifLinkType.InterWiki && !link.uri.contains("#")) {
+            links.getOrElseUpdate(link.wikiTarget, new mutable.HashSet[NifLink]) += link
+          }
+        }
+      }
+      for ((wiki, linkSet) <- links) {
+        if(linkSet.size == 1){ //check if we have only one link to another wiki
+          quads += new Quad(context.language, DBpediaDatasets.InterWikiLinksLinkSection, wikiPage.uri, wikiPageInterWikiLinkProperty, linkSet.head.uri, sourceUrl, null)
+        }
+      }
+    }
     quads
   }
 
@@ -245,7 +281,7 @@ class GeneralNifExtractor (
         val typ = if (linkText.split(" ").length > 1) "Phrase" else "Word"
         val word = getNifIri(typ.toString.toLowerCase, link.begin.getOrElse(0), link.end.getOrElse(0))
         quads += nifLinks(word, RdfNamespace.RDF.append("type"), RdfNamespace.NIF.append(typ), sourceUrl, null)
-        quads += nifLinks(word, RdfNamespace.RDF.append("type"), ontologyLink + link.linkType.toString + "Link", sourceUrl, null)
+        quads += nifLinks(word, RdfNamespace.RDF.append("type"), DBpediaNamespace.ONTOLOGY.append(link.linkType.toString + "Link"), sourceUrl, null)
         quads += nifLinks(word, RdfNamespace.NIF.append("referenceContext"), nifContextUri, sourceUrl, null)
         quads += nifLinks(word, RdfNamespace.NIF.append("beginIndex"), link.begin.getOrElse(0).toString, sourceUrl, RdfNamespace.XSD.append("nonNegativeInteger"))
         quads += nifLinks(word, RdfNamespace.NIF.append("endIndex"), link.end.getOrElse(0).toString, sourceUrl, RdfNamespace.XSD.append("nonNegativeInteger"))

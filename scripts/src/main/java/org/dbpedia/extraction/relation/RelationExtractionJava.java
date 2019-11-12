@@ -40,8 +40,6 @@ public class RelationExtractionJava
 
         Map<String, Set<String>> predictionCandidates = predictionCandidates(models, relations);
 
-        Set<String> s = predictionCandidates.get("http://dbkwik.webdatacommons.org/harrypotter/resource/Daphne_Maldon");
-
         Map<String, RelationPage> predictionSet = getPredictionSet(abstractEnds, predictionCandidates);
         updateType(predictionSet);
         computeSentenceFeatures(predictionSet, abstractEnds);

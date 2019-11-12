@@ -148,7 +148,13 @@
       "traits":"LinkedData, Published",
       "desc": "Dataset linking a DBpedia resource to the same resource in other wikis.",
       "defaultgraph": "dataset"
-    },    
+    },
+    "interwiki_links_link_section": {
+      "name": "InterWiki Links in Link Section",
+      "traits":"LinkedData, Published",
+      "desc": "All links which appears in a link section and linking to another wiki.",
+      "defaultgraph": "dataset"
+    },
     "interlanguage_links_chapters": {
       "name": "Interlanguage Links between DBpedia Chapters",
       "traits":"LinkedData, Published",
@@ -470,6 +476,12 @@
       "name": "Equations in MathML",
       "traits":"LinkedData",
       "desc": "This are all equations collected during the NIF extraction, transformed into MathML XML syntax.",
+      "defaultgraph": "dataset"
+    },
+    "hearst_patterns": {
+      "name": "Hearst Patterns in the short abstract",
+      "traits":"LinkedData",
+      "desc": "Hearst Patterns extracted from the short abstract.",
       "defaultgraph": "dataset"
     }
   },

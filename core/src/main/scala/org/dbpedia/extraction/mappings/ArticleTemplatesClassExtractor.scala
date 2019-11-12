@@ -58,7 +58,7 @@ class ArticleTemplatesClassExtractor(
         //  title = title.substring(indexInfoBox + 7, title.length)
         //}
         titleLower = titleLower.replaceAll("infobox", "")
-        titleLower = titleLower.replace("/", "")
+        titleLower = titleLower.replace("/", "_")
         titleLower = stripAll(titleLower, " _-")
         if(titleLower.nonEmpty) {
           var classUri = context.language.dbpediaUri + "/class/" + titleLower
@@ -68,7 +68,7 @@ class ArticleTemplatesClassExtractor(
 
           infoboxSeenClasses.synchronized {
             if (!infoboxSeenClasses.contains(classUri)) {
-              var classLabel = template.title.decoded.replaceAll("(?i)infobox", "")
+              var classLabel = template.title.decoded.replaceAll("(?i)infobox", "").replace("/", " ")
               classLabel = stripAll(classLabel, " _-")
               infoboxSeenClasses += classUri
               quads += new Quad(context.language, DBpediaDatasets.InfoboxTemplateTypeDefinitions, classUri, typeProperty, owlClass, node.sourceIri)
@@ -87,13 +87,17 @@ class ArticleTemplatesClassExtractor(
       }else{
         var selectedTemplateNode = templateNodes.sortBy(_.children.length).last
 
-        var templateClassUri = context.language.dbpediaUri + "/class/" + selectedTemplateNode.title.encoded.toLowerCase
+        var titleLower = selectedTemplateNode.title.encoded.toLowerCase
+        titleLower = titleLower.replace("/", "_")
+        titleLower = stripAll(titleLower, " _-")
+
+        var templateClassUri = context.language.dbpediaUri + "/class/" + titleLower
 
         quads += new Quad(context.language, DBpediaDatasets.TemplateType, subjectUri, typeProperty, templateClassUri, node.sourceIri)
 
         seenClasses.synchronized {
           if (!seenClasses.contains(templateClassUri)) {
-            var classLabel = selectedTemplateNode.title.decoded
+            var classLabel = selectedTemplateNode.title.decoded.replace("/", " ")
             classLabel = stripAll(classLabel, " _-")
             seenClasses += templateClassUri
             quads += new Quad(context.language, DBpediaDatasets.TemplateTypeDefinitions, templateClassUri, typeProperty, owlClass, node.sourceIri)

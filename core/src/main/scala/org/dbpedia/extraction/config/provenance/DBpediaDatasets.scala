@@ -156,6 +156,7 @@ object DBpediaDatasets extends java.io.Serializable
     val PageIds: Dataset = datasets("page_ids")
     val InterLanguageLinks: Dataset = datasets("interlanguage_links") // Since the inter-language links were moved from Wikipedia to Wikidata, we now extract these links from the Wikidata dump, not from Wikipedia pages.")
     val InterWikiLinks: Dataset = datasets("interwiki_links")
+    val InterWikiLinksLinkSection: Dataset = datasets("interwiki_links_link_section")
     val InterLanguageLinksChapter: Dataset = datasets("interlanguage_links_chapters")
     val Genders: Dataset = datasets("genders")
     val TopicalConcepts: Dataset = datasets("topical_concepts")
@@ -229,6 +230,7 @@ object DBpediaDatasets extends java.io.Serializable
     val NifTextLinks: Dataset = datasets("nif_text_links")
     val RawTables: Dataset = datasets("raw_tables")
     val Equations: Dataset = datasets("equations")
+    val HearstPatterns: Dataset = datasets("hearst_patterns")
 
     /**
      * Links

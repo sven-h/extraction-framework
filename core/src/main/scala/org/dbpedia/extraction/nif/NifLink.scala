@@ -4,7 +4,8 @@ class NifLink(
                var begin: Option[Int],
                var end: Option[Int],
                var uri: String,
-               var linkType: NifLinkType.Value
+               var linkType: NifLinkType.Value,
+               var wikiTarget : String
              ) {
 }
 

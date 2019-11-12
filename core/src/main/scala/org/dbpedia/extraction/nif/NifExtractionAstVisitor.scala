@@ -136,7 +136,8 @@ class NifExtractionAstVisitor(language : Language)
       begin = None,
       end = None,
       uri = link,
-      linkType = NifLinkType.External
+      linkType = NifLinkType.External,
+      wikiTarget = ""
     )
     nifLink.begin = Some(context.length)
     write(link)
@@ -159,7 +160,8 @@ class NifExtractionAstVisitor(language : Language)
       begin = None,
       end = None,
       uri = strLink,
-      linkType = NifLinkType.External
+      linkType = NifLinkType.External,
+      wikiTarget = ""
     )
     nifLink.begin = Some(context.length)
     if(link.hasTitle)
@@ -178,6 +180,7 @@ class NifExtractionAstVisitor(language : Language)
   def visit(link: WtInternalLink): Unit = {
     var linkTarget = link.getTarget.getAsString
     var linkType = NifLinkType.Internal
+    var wikiTarget = ""
     try
     {
       val destinationTitle = WikiTitle.parse(link.getTarget.getAsString, language)
@@ -203,6 +206,7 @@ class NifExtractionAstVisitor(language : Language)
           linkType = NifLinkType.Internal
         }
       }
+      wikiTarget = destinationTitle.language.dbpediaDomain
     }
     catch { case _: Throwable  =>  {
       write(link.getPrefix)
@@ -216,7 +220,8 @@ class NifExtractionAstVisitor(language : Language)
       begin = None,
       end = None,
       uri = linkTarget,
-      linkType = linkType
+      linkType = linkType,
+      wikiTarget = wikiTarget
     )
     nifLink.begin = Some(context.length)
     write(link.getPrefix)
@@ -366,6 +371,7 @@ class NifExtractionAstVisitor(language : Language)
   def visit(n: WtPageSwitch): Unit = {}
   def visit(hr: WtHorizontalRule): Unit = {}
   def visit(n: WtTable): Unit = {}//no table
+  def visit(e: WtXmlEmptyTag): Unit = {}
   def visit(e: WtXmlEndTag): Unit = {}
   def visit(e: WtXmlStartTag): Unit = {}
   def visit(n: WtXmlComment): Unit = {}
@@ -382,17 +388,21 @@ class NifExtractionAstVisitor(language : Language)
 
 
   private def write(s: String): Unit = {
-    if (s.isEmpty) return
-    if(context.isEmpty){
-      context ++= s.replace("\n", "").replaceAll(" +", " ").replaceAll("^\\s+", "")
+    val processed = preprocessString(s)
+    if (processed.isEmpty) return
+    if(context.isEmpty || context.last == ' '){
+      context ++= processed.replaceAll("^[\\s| ]+", "")
     }else{
-      if(context.last == ' '){
-        context ++= s.replace("\n", "").replaceAll(" +", " ").replaceAll("^\\s+", "")
-      }else{
-        context ++= s.replace("\n", "").replaceAll(" +", " ")
-      }
+        context ++= processed
     }
   }
+
+  private def preprocessString(s:String): String = {
+    s.replace("\n", "").replace("\r", "").replace("\t", "")
+      .replaceAll("[\\s| ]+", " ") //different whitespace character
+  }
+
+
 
   private def write(cs: Array[Char]): Unit = {
     write(String.valueOf(cs))

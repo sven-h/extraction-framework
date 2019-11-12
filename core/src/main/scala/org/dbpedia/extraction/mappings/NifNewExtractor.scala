@@ -49,7 +49,8 @@ class NifNewExtractor(
     DBpediaDatasets.NifContext,DBpediaDatasets.NifPageStructure,DBpediaDatasets.NifTextLinks,
     DBpediaDatasets.RawTables, DBpediaDatasets.Equations,
     DBpediaDatasets.LongAbstracts, DBpediaDatasets.ShortAbstracts,
-    DBpediaDatasets.InterWikiLinks, DBpediaDatasets.ExternalLinks, DBpediaDatasets.PageLinks, DBpediaDatasets.InterLanguageLinks
+    DBpediaDatasets.InterWikiLinks, DBpediaDatasets.ExternalLinks, DBpediaDatasets.PageLinks, DBpediaDatasets.InterLanguageLinks, DBpediaDatasets.InterWikiLinksLinkSection,
+    DBpediaDatasets.HearstPatterns
   )
 
   var config: WikiConfig = getSwebleConfig()
@@ -98,15 +99,17 @@ class NifNewExtractor(
       //new PrintWriter(URLEncoder.encode(pageNode.title.encoded + "_ast_expansion", StandardCharsets.UTF_8.toString)) { write(AstPrinter.print[WtNode](page)); close }
       var astVisitor = new NifExtractionAstVisitor(context.language)
       astVisitor.go(page)
-      if(astVisitor.getFullText().trim.length == 0){
+      if(astVisitor.getFullText().trim.length <= 5){
         //don't expand templates
         page = engine.postprocess(pageId, source,null).getPage
         astVisitor = new NifExtractionAstVisitor(context.language)
         astVisitor.go(page)
       }
-      //extractionInfoPrinter(astVisitor, URLEncoder.encode(pageNode.title.encoded + "_nif_extractor", StandardCharsets.UTF_8.toString))
-      quads ++= new GeneralNifExtractor(context, pageNode).extractNif(astVisitor.getTocMap(), astVisitor.getFullText())
-
+      if(astVisitor.getFullText().trim.length >= 5) {
+        //extractionInfoPrinter(astVisitor, URLEncoder.encode(pageNode.title.encoded + "_nif_extractor", StandardCharsets.UTF_8.toString))
+        //new PrintWriter(URLEncoder.encode(pageNode.title.encoded + "_ast_expansion", StandardCharsets.UTF_8.toString)) { write(AstPrinter.print[WtNode](page)); close }
+        quads ++= new GeneralNifExtractor(context, pageNode).extractNif(astVisitor.getTocMap(), astVisitor.getFullText())
+      }
     //}
     quads
   }
